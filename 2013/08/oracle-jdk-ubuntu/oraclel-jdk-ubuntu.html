@@ -1,0 +1,44 @@
+Installing Oracle jdk on Ubuntu
+
+<p>ubuntu boxes have by default open-jdk wich is a great tool, some tools requires oracle jdk version in order
+to run properly, ie <a href="http://wiki.apache.org/cassandra/GettingStarted">CassandraDB</a> this post shows how to install oracle jdk on ubuntu systems </p>
+
+<h3>Checking the current java version installed</h3>
+
+<pre>
+$ java --version
+java version "1.5.0"
+gij (GNU libgcj) version 4.6.3
+Copyright (C) 2007 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+</pre>
+
+<h3>Download and Installing oracle jdk</h3>
+
+<ol>
+    <li>Create a directory on your local filesystem where the jdk will live 
+        <code>$sudo mkdir -p /opt/oracle/jdk</code>
+    </li>
+    <li>Visit <a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Oracle website</a>
+        choose jdk that suit your needs and dowload it <strong>download the file with the .bin extension </strong>
+    </li>
+    <li> Change permission and execute downloaded file under /opt/oracle/jdk directory
+    </li>
+    <li>
+        Make symbolyc links between oracle jdk executables and /etc/alternatives directory.
+        <code>$sudo ln -s /opt/oracle/jdk/jdk1.6.0_45/bin/java /etc/alternatives/javaoracle </code>
+        <code>$sudo ln -s /opt/oracle/jdk/jdk1.6.0_45/bin/javac /etc/alternatives/javacoracle </code>
+    </li>
+</ol>
+
+Every time that you want want to use oracle jdk you can define an alias <code>alias java=/etc/alternatives/javaoracle</code> Now you can check again your java version:
+
+<pre>
+ $java -version
+ java version "1.6.0_45"
+ Java(TM) SE Runtime Environment (build 1.6.0_45-b06)
+ Java HotSpot(TM) 64-Bit Server VM (build 20.45-b01, mixed mode)
+
+</pre>
+

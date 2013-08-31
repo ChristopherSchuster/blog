@@ -1,0 +1,74 @@
+Installing CassandraDB on Ubuntu
+
+<p>CassandraDB is a powerfull Java based NoSQL Database, i'ts free source so we can download and installed, by 
+default there are not cassandra packages at Unbuntu repositories, this post shows how to install Cassandra on your
+Ubuntu box.
+</p>
+
+<h3>Installed the jdk</h3>
+
+<p>Oracle java1.6 is required in order to cassandra work properly, you will have to install it by hand because
+Ubuntu default jdk is openjdk, <a href="http://www.maigfrga.ntweb.co/installing-oracle-jdk-ubuntu/"> 
+more information about installed oracle jdk can be viewd at this post.</a>
+</p>
+
+<h3>Adding and configuring the debian repository</h3>
+<ol>
+    <li>Edit /etc/apt/sources.list and add the cassandra repository 
+    <code>deb http://debian.datastax.com/community stable main </code>.
+    </li>
+    <li>Add datasax repository key to your trusted repo keys 
+    <code>$ curl -L http://debian.datastax.com/debian/repo_key | sudo apt-key add -</code>
+    </li>
+    <li>Update repo and install CassandraDB and drivers
+    <code>sudo apt-get update && sudo apt-get install python-cql=1.0.10-1 dsc=1.0.10 cassandra=1.0.10</code>
+    </li>
+    <li>Cassandra will start by default after installition, to stop it
+        <code>sudo service cassandra stop</code>
+    </li>
+</ol>
+
+<h3>Testing the connection</h3>
+We can connect to cassandra usign cqlsh command: 
+<pre>
+    $ cqlsh 
+    Connected to Test Cluster at localhost:9160.
+    [cqlsh 2.0.0 | Cassandra 1.0.10 | CQL spec 2.0.0 | Thrift protocol 19.20.0]
+    Use HELP for help.
+    cqlsh> help
+
+    Documented commands (type help <topic>):
+    ========================================
+    ASSUME  DESC  DESCRIBE  EXIT  HELP  SELECT  SHOW  USE
+
+    Miscellaneous help topics:
+    ==========================
+    DROP_INDEX                 CREATE                       DELETE_WHERE       
+    ALTER_DROP                 DROP_KEYSPACE                UPDATE_USING       
+    SELECT_EXPR                ALTER_ALTER                  UPDATE_WHERE       
+    UUID_INPUT                 TYPES                        TIMESTAMP_OUTPUT   
+    DELETE_COLUMNS             SELECT_COLUMNFAMILY          CONSISTENCYLEVEL   
+    ALTER_ADD                  CREATE_COLUMNFAMILY_OPTIONS  CREATE_INDEX       
+    ALTER_WITH                 BEGIN                        CREATE_KEYSPACE    
+    APPLY                      UPDATE_SET                   ASCII_OUTPUT       
+    DELETE_USING               UPDATE_COUNTERS              DROP               
+    CREATE_COLUMNFAMILY_TYPES  TRUNCATE                     TIMESTAMP_INPUT    
+    DROP_COLUMNFAMILY          INSERT                       ALTER              
+    BLOB_INPUT                 TEXT_OUTPUT                  CREATE_COLUMNFAMILY
+    SELECT_WHERE               UPDATE                       DELETE             
+    BOOLEAN_INPUT              SELECT_LIMIT               
+
+    cqlsh> SHOW 
+    ASSUMPTIONS  HOST         VERSION      
+    cqlsh> SHOW HOST 
+    Connected to Test Cluster at localhost:9160.
+    cqlsh> 
+</pre>
+
+
+<h3>troubleshooting</h3>
+<ol>
+    <li>First time that i attempted start cassandra, did not work, the log messages said "the stack size specified is too small, Specify at least 160k" so i edited /etc/cassandra/cassandra-env.sh
+        search the line JVM_OPTS and change the value for something over 160k, at my case i changed to 256 JVM_OPTS="$JVM_OPTS -Xss256k"
+    </li>
+</ol>
