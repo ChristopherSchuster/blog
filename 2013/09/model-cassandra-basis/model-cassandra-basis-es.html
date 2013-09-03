@@ -1,0 +1,262 @@
+Introducci&oacute;n a CassandraDB
+<p>Crear un modelo de datos en Cassandra es similar a crearlo en un motor de base de datos tradicional, es 
+posible crear tablas, definir esquemas y hacer consultas. Dada la naturaleza distribuida de Cassandra, conceptos
+como llaves foraneas no existen, por lo tanto, es imposible realizar tareas sencillas para el algebra relacional
+como un join, por esta raz&oacute;n  <strong>desnormalizaci&oacute;n</strong> es un concepto clave cuando se
+dise&ntilde;a un modelo de datos en Cassandra. Antes de empezar es necesario instalar CassandraDB
+ <a href="http://www.maigfrga.ntweb.co/installing-cassandradb-ubuntu/">En este post se pueden encontrar las insturcciones para hacerlo.</a> </p>
+
+<h3>Llaves Primarias</h3>
+
+<p>Similar a bases de datos tradicionales, las llaves primarias en Cassandra ayudan a indexar la 
+informaci&oacute;n para su posterior consulta, pero al ser CassandraDb distribuida, la llave primaria ser&aacute;
+el par&aacute;metro que determine a que nodo va un registro. Los tipos de datos recomendados para lograr una
+correcta y uniforme distribuci&oacute;n de registros a trav&eacute;s de los nodos son 
+<a href=http://wiki.apache.org/cassandra/UUID"">UUID y TIMEUUID.</a> <strong> Es responsablidad de quien 
+dise&ntilde;e el modelo de datos seleccionar la llave primaria que garantice la correcta distribuci&oacute;n
+de registros a trav&eacute;s de los nodos, Cassandra no lo garantiza</strong>. Si se selecciona por ejemplo
+un entero secuencial como llave primaria, similar a una secuencia SQL, es posible que la mayor&iacute;a de 
+registros se almacen en un solo nodo y el balanceo de carga no funcione correctamente.
+</p>
+
+
+<h3> Un modelo b&aacute;sico Product/Order </h3>
+<pre>
+    CREATE TABLE product  (
+      id uuid PRIMARY KEY,
+      bar_code text,
+      name text,
+      price double
+     );
+
+
+    CREATE TABLE purchase_order  (
+      id uuid PRIMARY KEY,
+      product_id uuid,
+      product_name text,
+      quantity int
+    );
+</pre>
+
+<p>Insertamos algunos productos:</p>
+<pre>
+    INSERT INTO product(id, bar_code, name, price) VALUES(bdf3e070-4f75-11e1-a5c5-00215a17aed0,
+                                                          '4F5F4', 'TABLET', 300);
+
+    INSERT INTO product(id, bar_code, name, price) VALUES(0ba10600-6712-11e1-b653-00215a17aed0,
+                                                         '4Fu84', 'TV', 800);
+
+    INSERT INTO product(id, bar_code, name, price) VALUES(14bc9100-6712-11e1-990c-00215a17aed0,
+                                                         '4R5F', 'PC', 400);
+
+    INSERT INTO product(id, bar_code, name, price) VALUES(1a16bc50-6714-11e1-8366-00215a17aed0,
+                                                         '8D4F', 'WATCH', 250);
+</pre>
+
+<p>Creamos una orden:</p>
+
+<pre>
+    INSERT INTO purchase_order(id, product_id, product_name, quantity)
+        VALUES(35643ec0-1690-11e2-947c-00215a17aed0, bdf3e070-4f75-11e1-a5c5-00215a17aed0, 'TABLET', 3);
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity) 
+        VALUES(35643ec0-1690-11e2-947c-00215a17aed0, 0ba10600-6712-11e1-b653-00215a17aed0, 'TV', 8);
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity)
+        VALUES(35643ec0-1690-11e2-947c-00215a17aed0, 14bc9100-6712-11e1-990c-00215a17aed0, 'PC', 4);
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity)
+        VALUES(35643ec0-1690-11e2-947c-00215a17aed0, 1a16bc50-6714-11e1-8366-00215a17aed0, 'WATCH', 2);
+</pre>
+
+<p>Luego de crear una orden con productos hacemos un Select y esperamos obtener 4 registos, lo cual no es cierto:</p>
+
+<pre>
+    cqlsh:store> select * from purchase_order ;
+
+     id                                   | product_id                           | product_name | quantity
+    --------------------------------------+--------------------------------------+--------------+----------
+     35643ec0-1690-11e2-947c-00215a17aed0 | 1a16bc50-6714-11e1-8366-00215a17aed0 |        WATCH |        2
+</pre>
+
+<p>Ahora intentaremos obtener ordenes de compra que contengan un producto:</p>
+
+<pre>
+    cqlsh:store> select * from purchase_order where product_id=08d181c0-dc83-11e1-9c22-00215a17aed0;
+    Bad Request: No indexed columns present in by-columns clause with Equal operator
+</pre>
+
+<p>Estos dos ejemplos nos sugieren que el dise&ntilde;o de datos no es correcto, necesitamos agregar una 
+<strong>Llave primaria compuesta:</strong>   <p>
+
+
+<h3>LLAVE PRIMARIA COMPUESTA</h3>
+
+<p>El primer valor de llave compuesta es llamado <strong>Partion key</strong> y define la donde ser&aacute; 
+almacenado el registro las otras columnas se llama clustered columns, CassadraDb usa estas columnas para
+crear un indice ordenado que garantiza un acceso muy eficiente: </p>
+
+
+<pre>
+    DROP TABLE purchase_order;
+
+    CREATE TABLE purchase_order  (
+      id uuid,
+      product_id uuid,
+      product_name text,
+      quantity int,
+      PRIMARY KEY(id, product_id)
+    );
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity)
+        VALUES(35643ec0-1690-11e2-947c-00215a17aed0, bdf3e070-4f75-11e1-a5c5-00215a17aed0, 'TABLET', 3);
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity) 
+        VALUES(35643ec0-1690-11e2-947c-00215a17aed0, 0ba10600-6712-11e1-b653-00215a17aed0, 'TV', 8);
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity)
+        VALUES(35643ec0-1690-11e2-947c-00215a17aed0, 14bc9100-6712-11e1-990c-00215a17aed0, 'PC', 4);
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity)
+        VALUES(35643ec0-1690-11e2-947c-00215a17aed0, 1a16bc50-6714-11e1-8366-00215a17aed0, 'WATCH', 2);
+</pre>
+
+
+<p>Ahora podemos consultar la tabla purchase_order:
+</p>
+
+<pre>
+    cqlsh:store> select * from purchase_order;
+
+     id                                   | product_id                           | product_name | quantity
+    --------------------------------------+--------------------------------------+--------------+----------
+     35643ec0-1690-11e2-947c-00215a17aed0 | bdf3e070-4f75-11e1-a5c5-00215a17aed0 |       TABLET |        3
+     35643ec0-1690-11e2-947c-00215a17aed0 | 0ba10600-6712-11e1-b653-00215a17aed0 |           TV |        8
+     35643ec0-1690-11e2-947c-00215a17aed0 | 14bc9100-6712-11e1-990c-00215a17aed0 |           PC |        4
+     35643ec0-1690-11e2-947c-00215a17aed0 | 1a16bc50-6714-11e1-8366-00215a17aed0 |        WATCH |        2
+</pre>
+
+<p>Creamos otra orden de compra:</p>
+
+<pre>
+    INSERT INTO purchase_order(id, product_id, product_name, quantity)
+        VALUES(5e15135e-4b72-11e1-b84d-00215a17aed0, 1a16bc50-6714-11e1-8366-00215a17aed0, 'WATCH', 8);
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity) 
+        VALUES(5e15135e-4b72-11e1-b84d-00215a17aed0, 0ba10600-6712-11e1-b653-00215a17aed0, 'TV', 1);
+
+
+    cqlsh:store> select * from purchase_order;
+
+     id                                   | product_id                           | product_name | quantity
+    --------------------------------------+--------------------------------------+--------------+----------
+     35643ec0-1690-11e2-947c-00215a17aed0 | bdf3e070-4f75-11e1-a5c5-00215a17aed0 |       TABLET |        3
+     35643ec0-1690-11e2-947c-00215a17aed0 | 0ba10600-6712-11e1-b653-00215a17aed0 |           TV |        8
+     35643ec0-1690-11e2-947c-00215a17aed0 | 14bc9100-6712-11e1-990c-00215a17aed0 |           PC |        4
+     35643ec0-1690-11e2-947c-00215a17aed0 | 1a16bc50-6714-11e1-8366-00215a17aed0 |        WATCH |        2
+     5e15135e-4b72-11e1-b84d-00215a17aed0 | 0ba10600-6712-11e1-b653-00215a17aed0 |           TV |        1
+     5e15135e-4b72-11e1-b84d-00215a17aed0 | 1a16bc50-6714-11e1-8366-00215a17aed0 |        WATCH |        8
+</pre>
+
+
+<p>Filtrando una orden de compra por id:</p>
+<pre>
+    cqlsh:store> SELECT * from purchase_order where id=5e15135e-4b72-11e1-b84d-00215a17aed0;
+
+     id                                   | product_id                           | product_name | quantity
+    --------------------------------------+--------------------------------------+--------------+----------
+     5e15135e-4b72-11e1-b84d-00215a17aed0 | 0ba10600-6712-11e1-b653-00215a17aed0 |           TV |        1
+     5e15135e-4b72-11e1-b84d-00215a17aed0 | 1a16bc50-6714-11e1-8366-00215a17aed0 |        WATCH |        8
+</pre>
+
+<h3>Indices</h3>
+<p>Filtrar una orden por product_id:</p>
+<pre>
+    cqlsh:store> SELECT * FROM purchase_order WHERE product_id=0ba10600-6712-11e1-b653-00215a17aed0;
+
+    Bad Request: Cannot execute this query as it might involve data filtering and thus may have unpredictable performance. If you want to execute this query despite the performance unpredictability, use ALLOW FILTERING
+</pre>
+<p> En la consulta anterior, tratamos de obtener  purchase_order por product_id, pero la clave de partición es 
+   el order_id, para que podamos obtener varios pedidos con uno o más productos que coincidan con la cláusula 
+   WHERE Distribuida a través de los nodos, la operación necesaria para obtener esta información requiere
+   consultar leer todos purchase_order en todos los nodos, comprobar si coinciden con los criterios y
+   combinar los resultados, CassandraDb no puede manejar esto, porque el rendimiento sería inaceptable. 
+   Una solución que se puede implementar en este caso hay que crear otra tabla que almacene informaci&oacute;n 
+   purchase_order_id, product_id y crear dos &iacutendices
+</p>
+
+
+<pre>
+    CREATE TABLE product_purchase_order  (
+      id uuid PRIMARY KEY,
+      purchase_id uuid,
+      product_id uuid,
+      product_name text,
+      quantity int
+    );
+
+    CREATE INDEX ON product_purchase_order(purchase_id);
+    CREATE INDEX ON product_purchase_order(product_id);
+
+
+    INSERT INTO product_purchase_order(id, purchase_id, product_id, product_name, quantity)
+        VALUES(f5b87f80-913c-11e1-8995-00215a17aed0 ,35643ec0-1690-11e2-947c-00215a17aed0, 
+               bdf3e070-4f75-11e1-a5c5-00215a17aed0, 'TABLET', 3);
+
+    INSERT INTO product_purchase_order(id, purchase_id, product_id, product_name, quantity)
+        VALUES(54e793f0-a11a-11e1-bba9-00215a17aed0, 35643ec0-1690-11e2-947c-00215a17aed0,
+               0ba10600-6712-11e1-b653-00215a17aed0, 'TV', 8);
+
+    INSERT INTO product_purchase_order(id, purchase_id, product_id, product_name, quantity)
+        VALUES(9ba4eda2-38a6-11e2-b72b-00215a17aed0, 35643ec0-1690-11e2-947c-00215a17aed0, 
+               14bc9100-6712-11e1-990c-00215a17aed0, 'PC', 4);
+
+    INSERT INTO product_purchase_order(id, purchase_id, product_id, product_name, quantity)
+        VALUES(4b01bf90-7853-11e1-85e9-00215a17aed0, 35643ec0-1690-11e2-947c-00215a17aed0, 
+               1a16bc50-6714-11e1-8366-00215a17aed0, 'WATCH', 2);
+
+    INSERT INTO product_purchase_order(id, purchase_id, product_id, product_name, quantity)
+        VALUES(d33dc000-1d1e-11e2-943c-00215a17aed0, 5e15135e-4b72-11e1-b84d-00215a17aed0,
+               1a16bc50-6714-11e1-8366-00215a17aed0, 'WATCH', 8);
+
+    INSERT INTO product_purchase_order(id, purchase_id, product_id, product_name, quantity) 
+        VALUES(862fdbd0-26ac-11e2-95ee-00215a17aed0, 5e15135e-4b72-11e1-b84d-00215a17aed0, 0ba10600-6712-11e1-b653-00215a17aed0, 'TV', 1);
+
+    
+</pre>
+
+<p>Filtar ordenes por producto</p>
+<pre>
+    cqlsh:store> SELECT *  FROM product_purchase_order WHERE product_id=0ba10600-6712-11e1-b653-00215a17aed0;
+
+     id                                   | product_id                           | product_name | purchase_id                          | quantity
+    --------------------------------------+--------------------------------------+--------------+--------------------------------------+----------
+     54e793f0-a11a-11e1-bba9-00215a17aed0 | 0ba10600-6712-11e1-b653-00215a17aed0 |           TV | 35643ec0-1690-11e2-947c-00215a17aed0 |        8
+     862fdbd0-26ac-11e2-95ee-00215a17aed0 | 0ba10600-6712-11e1-b653-00215a17aed0 |           TV | 5e15135e-4b72-11e1-b84d-00215a17aed0 |        1
+
+</pre>
+
+<p> Cada &iacute;ndice es una nueva tabla oculta.</p>
+<h3>Algunas conclusiones personales </h3>
+<ul>
+    <li>La informaci&oacute;n de este post es muy poca, CassandraDB es muy grande y compleja.</li>
+    <li>Es sencillo insertar pero complicado consultar en CassandraDb.</li>
+    <li>Pensar en las consultas antes de dise&ntilde;ar el modelo de datos.</li>
+    <li>Debido que joins y algebra relacional no son permitidos en Cassandra, desnormalizar y duplicar datos esta bien.</li>
+    <li>Si se decide escoger primary/partition key datataype diferente de  uuid o timeuuid, hay q asegurarse
+    que la informaci&oacute;n ser&aacute; distribuida uniforme entre todos los nodos antes de desplegar el 
+    c&oacute;digo en producci&oacute;n.</li>
+</ul>
+
+<h3>Recursos</h3>
+<ul>
+    <li>
+        <a href="http://www.datastax.com/documentation/cql/3.0/webhelp/index.html#cql/ddl/ddl_intro_c.html">
+            CQL Data Modeling.
+        </a>
+    </li>
+    <li>
+       <a href="http://www.ebaytechblog.com/2012/07/16/cassandra-data-modeling-best-practices-part-1/"> 
+        Cassandra Data Modeling Best Practices, Part 1.</a>
+    </li>
+</ul>
