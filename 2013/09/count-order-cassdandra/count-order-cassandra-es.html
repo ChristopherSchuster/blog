@@ -1,0 +1,281 @@
+Contando, Indexando y ordenando en CassandraDB
+<p>Las bases de datos relacionales son eficientes realizando tareas como ordenar, contar, filtrar. Estas tareas son complejas en Cassandra debido a que filas de una misma tabla est&aacute;n distribuidas en varios nodos, y contar
+o filtar informaci&oacute;n en esta estructura es inaceptable en t&eacute;rminos de rendimiento  Traditional databases are very good performing common tasks like ordering, filtering, counting. Este POST muestra como y cuando es
+posible realizar este tipo de operaciones en CassandraDB.
+</p>
+<h3>Contando</h3>
+<p>Crearemos las tablas de una tienda, insertamos algunos registros y contamos:
+</p>
+<pre>
+    CREATE TABLE product  (
+      id uuid PRIMARY KEY,
+      category text,
+      bar_code text,
+      name text,
+      price double,
+     );
+
+    CREATE TABLE purchase_order  (
+      id uuid ,
+      product_id uuid,
+      product_name text,
+      quantity int,
+      PRIMARY KEY(id, product_id)
+    );
+
+    INSERT INTO product(id, category, bar_code, name, price) 
+        VALUES(bdf3e070-4f75-11e1-a5c5-00215a17aed0, 'mobile', '4F5F4', 'TABLET ORANGE', 300);
+
+    INSERT INTO product(id, category, bar_code, name, price) 
+        VALUES(d86cb040-0e02-11e0-9677-361934cac9ba, 'mobile', '4F5F4', 'PHONE BANANA', 100);
+
+    INSERT INTO product(id, category, bar_code, name, price) 
+        VALUES(4066b980-2f09-11e0-8551-361934cac9ba, 'tv', '4F5F4', 'SMART TV', 100);
+
+    cqlsh:store> SELECT COUNT(*) FROM product;
+
+     count
+    -------
+         3
+</pre>
+<p>Veremos que pasa luego de insertar 20000 registros: </p>
+<pre>
+    cqlsh:store> SELECT COUNT(*) FROM product;
+
+     count
+    -------
+     10000
+
+    Default LIMIT of 10000 was used. Specify your own LIMIT clause to get more results.
+
+
+    cqlsh:store> SELECT COUNT(*) FROM product limit 5000;
+
+     count
+    -------
+     5000
+
+
+    cqlsh:store> SELECT COUNT(*) FROM product limit 80000;
+
+     count
+    -------
+     20000
+</pre>
+
+<p> Cassandra cuenta registro por registro, a trav&eacute;s de todos los nodos, aplicando un limit por defecto,
+    asi que el resultado puede no ser real, si hay m&aacute;s registros que el limit, ahora intentamos hacer
+    un count luego de insertar 6 millones de registros:</p>
+
+<pre>
+    cqlsh:store> SELECT COUNT(*) FROM product limit 6000000;
+    Request did not complete within rpc_timeout.
+</pre>
+
+
+<h3>Counter Table</h3>
+<p>Es un tipo especial de tabla, que contiene una llave primaria que puede ser de cualquier
+ <a href="http://www.datastax.com/docs/1.1/references/cql/cql_data_types">Tipo de dato de Cassandra</a>
+ y una o mas columnas de tipo counter:
+</p>
+<pre>
+    CREATE TABLE counter_store(
+        object text PRIMARY KEY,
+        count counter,
+    );
+</pre>
+
+<h4>Insertando datos e incrementando el contador</h4>
+<p>Counter tables solo soportan la operaci&oacute;n UPDATE. El siguiente ejemplo muestra como incrementar una
+Counter Table:</p>
+<pre>
+
+    UPDATE counter_store set count= count + 1 where object='product';
+
+    cqlsh:store> select * from counter_store ;
+
+     object  | count
+    ---------+-------
+     product |     1
+
+    UPDATE counter_store set count = count + 3 where object='product';
+
+    cqlsh:store> select * from counter_store ;
+
+     object  | count
+    ---------+-------
+     product |     4
+
+
+    UPDATE counter_store set count= count + 1 where object='purchase_order';
+
+
+    cqlsh:store> select * from counter_store ;
+
+     object         | count
+    ----------------+-------
+            product |     4
+     purchase_order |     1
+</pre>
+
+
+<h3>Indexando</h3>
+
+<p>Vamos a traer todos los productos que pertenencen a la categor&iacute;a mobile:</p> 
+
+<pre>
+    cqlsh:store> SELECT * FROM product WHERE category='mobile';
+    Bad Request: No indexed columns present in by-columns clause with Equal operator
+</pre>
+
+<p>Esto quiere decir que no es posible por defecto, realizar una consulta de filtrado usando como criterio un 
+campo que no es llame primaria, eso se puede solucionar
+ <a href="http://www.datastax.com/documentation/cql/3.0/webhelp/index.html#cql/ddl/ddl_primary_index_c.html"> 
+   Creando un Indice Secundario </a>  sobre los campos que desean ser filtrados. Cada &iacute;ndice secundario
+   crea una tabla oculta para mejorar el rendimiento :</p>
+
+<pre>
+    cqlsh:store> CREATE INDEX product_category_idx ON product(category);
+
+    cqlsh:store> SELECT * FROM product WHERE category='mobile';
+
+     id                                   | bar_code | category | name          | price
+    --------------------------------------+----------+----------+---------------+-------
+     d86cb040-0e02-11e0-9677-361934cac9ba |    4F5F4 |   mobile |  PHONE BANANA |   100
+     bdf3e070-4f75-11e1-a5c5-00215a17aed0 |    4F5F4 |   mobile | TABLET ORANGE |   300
+</pre>
+
+<h4>Cuando esta bien usar &iacute;ndices en Cassandra</h4>
+
+<p>Indices est&aacute;n bien para consultar informaci&oacute;n de tablas que tienen muchos registros que pueden
+cumplir potencialmente con los criterios de b&uacute;squeda, por ejemplo, si hay muchos productos de una misma
+categor&iacute;a, si hay pocos productos por categor&iacute y muchas categor&iacute;as el &iacute;ndice no es
+eficiente.  </p>
+
+<h3>Ordenando</h3>
+
+<p>Trataremos de ordenar los productos por precio:</p>
+
+<pre>
+    cqlsh:store> SELECT * FROM product order by price;
+    Bad Request: ORDER BY is only supported when the partition key is restricted by an EQ or an IN.
+</pre>
+
+<p>
+  Este mensaje de error significa que solo es posible ordenar cuando se restringe el criterio de b&uacute;squeda 
+  usando una clausula WHERE o una clausula  IN , esto no tiene sentido en la tabla productos porque existe
+  un solo producto por llave primaria <strong>Se encontrara mejor almacenada esta tabla en un motor
+  relacional?</strong>, creemos algunas ordenes de compra: 
+</p>
+
+<pre>
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity)
+        VALUES(5e15135e-4b72-11e1-b84d-00215a17aed0, bdf3e070-4f75-11e1-a5c5-00215a17aed0, 'TABLET ORANGE', 3);
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity)
+        VALUES(5e15135e-4b72-11e1-b84d-00215a17aed0, d86cb040-0e02-11e0-9677-361934cac9ba, 'PHONE BANANA', 8);
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity) 
+        VALUES(5e15135e-4b72-11e1-b84d-00215a17aed0, 4066b980-2f09-11e0-8551-361934cac9ba, 'SMART TV', 1);
+
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity)
+        VALUES(c0a874f0-392a-11e0-a0df-361934cac9ba, d86cb040-0e02-11e0-9677-361934cac9ba, 'PHONE BANANA', 2);
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity) 
+        VALUES(c0a874f0-392a-11e0-a0df-361934cac9ba, 4066b980-2f09-11e0-8551-361934cac9ba, 'SMART TV', 3);
+
+
+    cqlsh:store> select * from purchase_order ;
+
+     id                                   | product_id                           | product_name  | quantity
+    --------------------------------------+--------------------------------------+---------------+----------
+     5e15135e-4b72-11e1-b84d-00215a17aed0 | d86cb040-0e02-11e0-9677-361934cac9ba |  PHONE BANANA |        8
+     5e15135e-4b72-11e1-b84d-00215a17aed0 | 4066b980-2f09-11e0-8551-361934cac9ba |      SMART TV |        1
+     5e15135e-4b72-11e1-b84d-00215a17aed0 | bdf3e070-4f75-11e1-a5c5-00215a17aed0 | TABLET ORANGE |        3
+     c0a874f0-392a-11e0-a0df-361934cac9ba | d86cb040-0e02-11e0-9677-361934cac9ba |  PHONE BANANA |        2
+     c0a874f0-392a-11e0-a0df-361934cac9ba | 4066b980-2f09-11e0-8551-361934cac9ba |      SMART TV |        3
+
+
+    cqlsh:store> select * from purchase_order where id=c0a874f0-392a-11e0-a0df-361934cac9ba;
+
+     id                                   | product_id                           | product_name | quantity
+    --------------------------------------+--------------------------------------+--------------+----------
+     c0a874f0-392a-11e0-a0df-361934cac9ba | d86cb040-0e02-11e0-9677-361934cac9ba | PHONE BANANA |        2
+     c0a874f0-392a-11e0-a0df-361934cac9ba | 4066b980-2f09-11e0-8551-361934cac9ba |     SMART TV |        3
+
+
+</pre>
+
+<p>
+Intentemos ordernar los productos de una order de compra por cantidad:
+</p>
+
+<pre>
+    cqlsh:store> select * from purchase_order where id=c0a874f0-392a-11e0-a0df-361934cac9ba order by quantity;
+    Bad Request: Order by is currently only supported on the clustered columns of the PRIMARY KEY, got quantity
+</pre>
+
+
+<p><strong>Solo es posible ordernar registros aplicando una clausula WHERE primero y ordernando por una columnda que sea llave primaria compuesta: </strong>
+</p>
+
+
+<pre>
+    DROP TABLE purchase_order;
+
+    CREATE TABLE purchase_order  (
+      id uuid ,
+      product_id uuid,
+      product_name text,
+      quantity int,
+      PRIMARY KEY(id, quantity, product_id)
+    );
+
+
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity)
+        VALUES(5e15135e-4b72-11e1-b84d-00215a17aed0, bdf3e070-4f75-11e1-a5c5-00215a17aed0, 'TABLET ORANGE', 3);
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity)
+        VALUES(5e15135e-4b72-11e1-b84d-00215a17aed0, d86cb040-0e02-11e0-9677-361934cac9ba, 'PHONE BANANA', 8);
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity) 
+        VALUES(5e15135e-4b72-11e1-b84d-00215a17aed0, 4066b980-2f09-11e0-8551-361934cac9ba, 'SMART TV', 1);
+
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity)
+        VALUES(c0a874f0-392a-11e0-a0df-361934cac9ba, d86cb040-0e02-11e0-9677-361934cac9ba, 'PHONE BANANA', 2);
+
+    INSERT INTO purchase_order(id, product_id, product_name, quantity) 
+        VALUES(c0a874f0-392a-11e0-a0df-361934cac9ba, 4066b980-2f09-11e0-8551-361934cac9ba, 'SMART TV', 3);
+
+
+
+    select * from purchase_order where id=c0a874f0-392a-11e0-a0df-361934cac9ba order by quantity;
+
+    cqlsh:store> select * from purchase_order where id=c0a874f0-392a-11e0-a0df-361934cac9ba order by quantity;
+
+     id                                   | quantity | product_id                           | product_name
+    --------------------------------------+----------+--------------------------------------+--------------
+     c0a874f0-392a-11e0-a0df-361934cac9ba |        2 | d86cb040-0e02-11e0-9677-361934cac9ba | PHONE BANANA
+     c0a874f0-392a-11e0-a0df-361934cac9ba |        3 | 4066b980-2f09-11e0-8551-361934cac9ba |     SMART TV
+
+</pre>
+
+<h3>Algunas conclusiones personales </h3>
+<ul>
+    <li>Tareas sencillas para una base de datos relacional como ordenar, filtrar pueden ser costosas, e incluso 
+    imposibles en Cassandra.
+    </li>
+    <li>Pensar cuidadosamente como los datos van a ser consultados en lugar de pensar como van  a ser insertados
+    cuando se este dise&ntilde;ando un modelo de datos en Cassandra. 
+    </li>
+    <li>Probar el modelo de datos, insertar millones de registros en un ambiente de pruebas y asegurarse que es 
+    posible consultar la informaci&oacute;n en la forma que se desea.    </li>
+    <li>Utlizar Column Counters.
+    </li>
+    <li>Tener en cuenta que operaciones de ordenar son lentas y pueden arrojar resultados equivocados, es mejor
+    dise&ntilde;ar un modelo que inserte datos ordenados.    </li>
+</ul>
