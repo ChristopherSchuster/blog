@@ -1,0 +1,152 @@
+Ejemplo de implementaci&oacute;n de Patr&oacute;n Observer en Java y Python
+<p><a href="http://en.wikipedia.org/wiki/Observer_pattern"> Wikipedia:</a> 
+Observer es un patr&oacute;n de dise&ntilde;o que define una dependencia del tipo uno-a-muchos entre objetos, de manera que cuando uno de los objetos cambia su estado, notifica este cambio a todos los dependientes. Este post muesta ejemplos de 
+implementaci&oacute;n en Python y Java.
+</p>
+
+<h3>Ejemplo de un sistema de notificaciones</h3>
+<p>Digamos que tenemos una red social, cada vez que un usuario solicita cambio de contrase&ntilde;a un email
+y un SMS son enviados para confirmar la solicitud.
+</p>
+
+<h3>Implementaci&oacute;n Java</h3>
+
+<h4>Subject: </h4>
+
+<pre>
+    package co.ntweb.maigfrga.observer;
+
+    import java.util.Observable;
+
+    /* Subject implementation Observer pattern*/
+
+    public class NotificationSubject extends Observable
+    {
+        public void sendMessage(String message){
+            System.out.println( "Change status and notify observers" );
+            setChanged();
+            notifyObservers(message);
+        }
+
+    }
+</pre>
+
+<h4>Email observer:</h4>
+
+<pre>
+    package co.ntweb.maigfrga.observer;
+
+    import java.util.Observable;
+    import java.util.Observer;
+
+    public class EmailObserver implements Observer {
+        private String message;
+
+        public void update(Observable obj, Object arg) {
+            if (arg instanceof String) {
+                message = (String) arg;
+                System.out.println("\nSend message by  Email: " + message );
+            }
+        }
+    }
+</pre>
+
+<h4>SMS Observer </h4>
+<pre>
+    package co.ntweb.maigfrga.observer;
+
+    import java.util.Observable;
+    import java.util.Observer;
+
+    public class SMSObserver implements Observer {
+        private String message;
+
+        public void update(Observable obj, Object arg) {
+            if (arg instanceof String) {
+                message = (String) arg;
+                System.out.println("\nSend message by  SMS: " + message );
+            }
+        }
+    }
+</pre>
+
+<h4>Registrando los observadores</h4>
+<pre>
+    NotificationSubject subject = new NotificationSubject();
+    EmailObserver email_observer = new EmailObserver();
+    SMSObserver sms_observer = new SMSObserver();
+
+    subject.addObserver(email_observer);
+    subject.addObserver(sms_observer);
+    subject.sendMessage("Hello world :-)");
+</pre>
+
+<h3>Implementaci&oacute;n en Python</h3>
+
+<h4>Subject: </h4>
+
+<pre>
+    class Subject(object):
+    """Observer pattern http://en.wikipedia.org/wiki/Observer_pattern
+    """
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def register(self, observer):
+        pass
+
+    def unregister(self, observer):
+        pass
+
+    def notify_all(self, *args, **kwargs):
+        pass
+
+class  NotificationSubject(Subject):
+    def __init__(self, *args, **kwargs):
+        self._observers = []
+
+    def register(self, observer):
+        self._observers.add(observer)
+
+    def unregister(self, observer):
+        self._observers.remove(observer)
+
+    def notify_all(self, message):
+        for observer in self._observers:
+            observer.notify(message)
+
+    def send_message(self, message):
+        print 'notification subject'
+        self.notify_all(message)
+</pre>
+
+<h4>Observers</h4>
+<pre>
+    class Observer(object):
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def notify(self, *args, **kwargs):
+            pass
+
+
+    class EmailObserver(Observer):
+        def notify(self, message):
+            print '\n Send Email message'
+
+    class SMSObserver(Observer):
+        def notify(self, message):
+            print '\n Send SMS message'
+</pre>
+
+<h4>Registrando los observadores</h4>
+<pre>
+    subject = NotificationSubject()
+    email_observer = EmailObserver()
+    subject.register(email_observer)
+    sms_observer = SMSObserver()
+    subject.register(sms_observer)
+    subject.send_message('Hello world :-)')
+</pre>
+
+<p>Source code can be found at this <a href=""> link </a> </p>
