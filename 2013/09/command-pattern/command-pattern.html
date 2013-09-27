@@ -1,0 +1,56 @@
+Command Pattern, Java and Python Example
+<p>From <a href="http://en.wikipedia.org/wiki/Command_pattern">Wikipedia</a>
+In object-oriented programming, the command pattern is a behavioral design pattern in which an object is used to represent and encapsulate all the information needed to call a method at a later time. This information includes the method name, the object that owns the method and values for the method parameters. This post shows an
+example implemented on Java and Python.
+</p>
+
+<h3>Multilevel Undo Example</h3>
+<p>Lest suppouse that we have an editor, an user can copy , cut and paste text inside a screen. If all user 
+actions in this program are implemented as command objects, the program can keep a stack of 
+the most recently executed commands. When the user wants to undo a command, the program simply pops the most 
+recent command object and executes its undo() method.
+</p>
+
+<h3>Java Implementation</h3>
+<h5>The Receiver</h5>
+<p>Is the object that will be manipulated by a command, in this particular example the Receiver Object is 
+a Screen Object.
+</p>
+
+<pre>
+    package co.ntweb;
+
+    public class Screen {
+        private StringBuffer text;
+
+        public Screen(String text){
+            this.text = new StringBuffer(text);
+        }
+
+        public String cut(int start, int end){
+            String str = this.text.substring(start, end);
+            this.text.delete(start, end);
+            return str;
+        }
+
+        public String copy(int start, int end){
+            return this.text.substring(start, end);
+        }
+
+        public void paste(int offset, String str){
+            this.text.insert(offset, str);
+        }
+
+        public String toString(){
+            return this.text.toString();
+        }
+
+        public int length(){
+            return this.text.length();
+        }
+    }
+</pre>
+
+<h5>Command Objects</h5>
+<p> Command Object implents all the logic that the command needs, this include undo instructions and screen 
+state before execute command.</p>
