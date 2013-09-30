@@ -9,7 +9,7 @@ public class Screen {
         this.clipBoard = new StringBuffer();
     }
 
-    private void clearClipBoard(){
+    public void clearClipBoard(){
         this.clipBoard.delete(0, this.clipBoard.length());
     }
 
@@ -34,6 +34,10 @@ public class Screen {
 
     public String toString(){
         return this.text.toString();
+    }
+
+    public void setText(String text){
+        this.text = new StringBuffer(text);
     }
 
     public int length(){

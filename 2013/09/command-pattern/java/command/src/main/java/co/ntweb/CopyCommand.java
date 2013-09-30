@@ -21,5 +21,6 @@ public class CopyCommand implements Command{
     }
 
     public void undo(){
+        this.screen.clearClipBoard();
     }
 }

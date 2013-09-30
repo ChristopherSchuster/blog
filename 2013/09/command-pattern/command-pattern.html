@@ -22,27 +22,42 @@ a Screen Object.
 
     public class Screen {
         private StringBuffer text;
+        private StringBuffer clipBoard;
 
         public Screen(String text){
             this.text = new StringBuffer(text);
+            this.clipBoard = new StringBuffer();
         }
 
-        public String cut(int start, int end){
-            String str = this.text.substring(start, end);
+        public void clearClipBoard(){
+            this.clipBoard.delete(0, this.clipBoard.length());
+        }
+
+        public void cut(int start, int end){
+            clearClipBoard();
+            this.clipBoard.append(this.text.substring(start, end));
             this.text.delete(start, end);
-            return str;
         }
 
-        public String copy(int start, int end){
-            return this.text.substring(start, end);
+        public void copy(int start, int end){
+            clearClipBoard();
+            this.clipBoard.append(this.text.substring(start, end));
         }
 
-        public void paste(int offset, String str){
-            this.text.insert(offset, str);
+        public void paste(int offset){
+            this.text.insert(offset, getClipBoard());
+        }
+
+        public String getClipBoard(){
+            return this.clipBoard.toString();
         }
 
         public String toString(){
             return this.text.toString();
+        }
+
+        public void setText(String text){
+            this.text = new StringBuffer(text);
         }
 
         public int length(){
@@ -54,3 +69,169 @@ a Screen Object.
 <h5>Command Objects</h5>
 <p> Command Object implents all the logic that the command needs, this include undo instructions and screen 
 state before execute command.</p>
+
+<pre>
+
+    package co.ntweb;
+
+    public interface Command {
+        void execute();
+        void undo();
+    }
+
+
+    package co.ntweb;
+
+    import co.ntweb.Command;
+    import co.ntweb.Screen;
+
+    public class CopyCommand implements Command{
+        private Screen screen;
+        private String previous_status;
+        private int start;
+        private int end;
+
+        public CopyCommand(Screen screen, int start, int end){
+            this.screen = screen;
+            this.previous_status = screen.toString();
+            this.start = start;
+            this.end = end;
+        }
+
+        public void execute(){
+            this.screen.copy(this.start, this.end);
+        }
+
+        public void undo(){
+            this.screen.clearClipBoard();
+        }
+    }
+
+
+
+    package co.ntweb;
+
+    import co.ntweb.Command;
+    import co.ntweb.Screen;
+
+    public class CutCommand implements Command{
+        private Screen screen;
+        private String previousStatus;
+        private int start;
+        private int end;
+
+        public CutCommand(Screen screen, int start, int end){
+            this.screen = screen;
+            this.previousStatus = screen.toString();
+            this.start = start;
+            this.end = end;
+        }
+
+        public void execute(){
+            this.screen.cut(this.start, this.end);
+        }
+
+        public void undo(){
+            this.screen.clearClipBoard();
+            this.screen.setText(this.previousStatus);
+        }
+    }
+
+
+
+    package co.ntweb;
+
+    import co.ntweb.Command;
+    import co.ntweb.Screen;
+
+    public class PasteCommand implements Command{
+        private Screen screen;
+        private String previousStatus;
+        private int offset;
+
+        public PasteCommand(Screen screen, int offset){
+            this.screen = screen;
+            this.previousStatus = screen.toString();
+            this.offset = offset;
+        }
+
+        public void execute(){
+            this.screen.paste(this.offset);
+        }
+
+        public void undo(){
+            this.screen.clearClipBoard();
+            this.screen.setText(this.previousStatus);
+        }
+    }
+
+
+</pre>
+
+<h5>Invoker Object</h5>
+<p>The button, toolbar button, or menu item clicked, the shortcut key pressed by the user.
+</p>
+
+<pre>
+    package co.ntweb;
+
+    import co.ntweb.Command;
+
+    import java.util.LinkedList;
+
+    public class ScreenInvoker{
+        private LinkedList<Command> history = new LinkedList<Command>();
+
+        public ScreenInvoker(){
+        }
+
+        public void storeAndExecute(Command cmd) {
+          this.history.add(cmd);
+          cmd.execute();
+        }
+
+        public void undoLast(){
+            this.history.removeLast().undo();
+        }
+
+    }
+</pre>
+
+<h5>Pattern usage</h5>
+<pre>
+        Screen editor = new Screen("hello world!!");
+        ScreenInvoker client = new ScreenInvoker();
+
+        CutCommand cutCommand = new CutCommand(editor, 5, 11);
+        client.storeAndExecute(cutCommand);
+        assertEquals("hello!!", editor.toString());
+
+        PasteCommand pasteCommand = new PasteCommand(editor, 0);
+        client.storeAndExecute(pasteCommand);
+        assertEquals(editor.toString(), " worldhello!!");
+
+        CopyCommand copyCommand = new CopyCommand(editor, 0, editor.length());
+        client.storeAndExecute(copyCommand);
+
+        PasteCommand pasteCommand2 = new PasteCommand(editor, 0);
+        client.storeAndExecute(pasteCommand2);
+        assertEquals(editor.toString(), " worldhello!! worldhello!!");
+
+        //undo last paste
+        client.undoLast();
+        assertEquals(editor.toString(), " worldhello!!");
+
+        //undo copy
+        client.undoLast();
+        assertEquals(editor.toString(), " worldhello!!");
+
+        //undo paste
+        client.undoLast();
+        assertEquals("hello!!", editor.toString());
+
+        //undo cut
+        client.undoLast();
+        assertEquals("hello world!!", editor.toString());
+</pre>
+
+<h3>Python Implementation</h3>
