@@ -86,7 +86,6 @@ public class CommandTest extends TestCase{
         pasteCommand.execute();
         assertEquals(screen.toString(), " worldhello!!");
         pasteCommand.undo();
-        System.out.println(screen.toString());
         assertEquals(screen.toString(), "hello!!");
         cutCommand.undo();
         assertEquals(screen.toString(), "hello world!!");
