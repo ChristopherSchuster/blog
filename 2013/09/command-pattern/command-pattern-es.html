@@ -1,20 +1,20 @@
-Command Pattern, Java and Python Example
-<p>From <a href="http://en.wikipedia.org/wiki/Command_pattern">Wikipedia</a>
-In object-oriented programming, the command pattern is a behavioral design pattern in which an object is used to represent and encapsulate all the information needed to call a method at a later time. This information includes the method name, the object that owns the method and values for the method parameters. This post shows an
-example implemented on Java and Python.
+Ejemplo de implementaci&oacute;n patr&oacute;n Command en Java y Python
+
+<p>Fuente: <a href="http://es.wikipedia.org/wiki/Command_%28patr%C3%B3n_de_dise%C3%B1o%29">Wikipedia: </a> Este patrón permite solicitar una operación a un objeto sin conocer realmente el contenido de esta operación, ni el receptor real de la misma. Para ello se encapsula la petición como un objeto, con lo que además se facilita la parametrización de los métodos. Este Post muestra la implentaci&oacute;n de este patr&oacute;n en Java y Python.
 </p>
 
-<h3>Multilevel Undo Example</h3>
-<p>Lest suppouse that we have an editor, an user can copy , cut and paste text inside a screen. If all user 
-actions in this program are implemented as command objects, the program can keep a stack of 
-the most recently executed commands. When the user wants to undo a command, the program simply pops the most 
-recent command object and executes its undo() method.
+<h3>Historial de comandos con opci&oacute;n para deshacer</h3>
+
+<p>Vamos a suponer que tenemos un editor en el cual un usuario puede copiar, cortar y pegar text en una
+pantalla. Si todas las acciones son implentadas como comandos, el programa puede guardar un historial de 
+los comandos ejecutados y desahacerlos en orden inversa a como han sido generados.
 </p>
 
-<h3>Java Implementation</h3>
-<h5>The Receiver</h5>
-<p>Is the object that will be manipulated by a command, in this particular example the Receiver Object is 
-a Screen Object.
+<h3>Ejemplo en Java</h3>
+
+<h5>El Receptor</h5>
+
+<p>Es el objeto que está a punto deser copiado, pegado movido, etc. El objeto Receptor posee el método que es llamado en el método ejecutar de la orden, en esta caso, es un objecto de tipo  Screen
 </p>
 
 <pre>
@@ -66,9 +66,10 @@ a Screen Object.
     }
 </pre>
 
-<h5>Command Objects</h5>
-<p> Command Object implents all the logic that the command needs, this include undo instructions and screen 
-state before execute command.</p>
+<h5>Objetos Comando</h5>
+
+<p>Implementan la lógica de llamado a la funcionalidad, incluye información para deshacer el comando.
+</p>
 
 <pre>
 
@@ -165,11 +166,10 @@ state before execute command.</p>
         }
     }
 
-
 </pre>
 
-<h5>Invoker Object</h5>
-<p>The button, toolbar button, or menu item clicked, the shortcut key pressed by the user.
+<h5>Objecto Invoker</h5>
+<p>El bot&oacute;n, barra de men&uacute;, etc, que se encarga de invocar los comandos y guardar el historial.
 </p>
 
 <pre>
@@ -197,7 +197,8 @@ state before execute command.</p>
     }
 </pre>
 
-<h5>Pattern usage</h5>
+<h5>Uso del patr&oacute;n</h5>
+
 <pre>
         Screen editor = new Screen("hello world!!");
         ScreenInvoker client = new ScreenInvoker();
@@ -234,8 +235,10 @@ state before execute command.</p>
         assertEquals("hello world!!", editor.toString());
 </pre>
 
-<h3>Python Implementation</h3>
-<h5>The Receiver</h5>
+<h3>Ejemplo en Python</h3>
+
+<h5>Receiver</h5>
+
 <pre>
     class Screen(object):
         def __init__(self, text=''):
@@ -270,7 +273,7 @@ state before execute command.</p>
             return self._text
 </pre>
 
-<h5>The Commands</h5>
+<h5>Commands</h5>
 <pre>
     class Command(object):
         _previous_status = ''
@@ -323,7 +326,7 @@ state before execute command.</p>
             self._screen._text = self._previous_status
 </pre>
 
-<h5>The Invoker</h5>
+<h5>Invoker</h5>
 <pre>
     class ScreenInvoker(object):
         def __init__(self):
@@ -338,7 +341,7 @@ state before execute command.</p>
                 self._history.pop().undo()
 </pre>
 
-<h5>Pattern Usage</h5>
+<h5>Uso</h5>
 <pre>
     screen = Screen('hello world!!')
     client = ScreenInvoker()
@@ -371,4 +374,4 @@ state before execute command.</p>
     self.assertEquals('hello world!!', screen.text)
 </pre>
 
-<p>Source code can be checked <a href="https://github.com/maigfrga/blog/tree/master/2013/09/command-pattern">here</a> </p>
+<p>C&oacute;digo fuente puede ser encontrado <a href="https://github.com/maigfrga/blog/tree/master/2013/09/command-pattern">en este enlace</a> </p>

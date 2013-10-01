@@ -1,6 +1,6 @@
 import unittest
 
-from command import Screen, CopyCommand, CutCommand, PasteCommand
+from command import Screen, CopyCommand, CutCommand, PasteCommand, ScreenInvoker
 
 class CommandTestCase(unittest.TestCase):
     def test_copy(self):
@@ -49,6 +49,43 @@ class CommandTestCase(unittest.TestCase):
         self.assertEquals(' worldhello!!', screen.text)
         paste_command.undo()
         self.assertEquals('hello!!', screen.text)
+
+    def test_invoker(self):
+        screen = Screen('hello world!!')
+        client = ScreenInvoker()
+
+        cut_command = CutCommand(screen, start=5, end=11)
+        client.store_and_execute(cut_command)
+        self.assertEquals('hello!!', screen.text)
+
+        paste_command = PasteCommand(screen, offset=0)
+        client.store_and_execute(paste_command)
+        self.assertEquals(' worldhello!!', screen.text)
+
+        copy_command = CopyCommand(screen, start=0, end=screen.length())
+        client.store_and_execute(copy_command)
+
+        paste_command2 = PasteCommand(screen, offset=0)
+        client.store_and_execute(paste_command2)
+        self.assertEquals(' worldhello!! worldhello!!', screen.text)
+
+        #undo last paste
+        client.undo_last()
+        self.assertEquals(' worldhello!!', screen.text)
+
+        #undo copy
+        client.undo_last()
+        self.assertEquals(' worldhello!!', screen.text)
+        self.assertEquals('', screen.clipboard)
+
+        #undo paste
+        client.undo_last()
+        self.assertEquals('hello!!', screen.text)
+
+        #undo cut
+        client.undo_last()
+        self.assertEquals('hello world!!', screen.text)
+
 
 def main():
     suite1 = unittest.TestLoader().loadTestsFromTestCase(CommandTestCase)

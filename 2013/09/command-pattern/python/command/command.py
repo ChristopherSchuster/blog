@@ -80,3 +80,16 @@ class PasteCommand(Command):
     def undo(self):
         self._screen.clear_clipboard()
         self._screen._text = self._previous_status
+
+
+class ScreenInvoker(object):
+    def __init__(self):
+        self._history = []
+
+    def store_and_execute(self, command):
+        command.execute()
+        self._history.append(command)
+
+    def undo_last(self):
+        if self._history:
+            self._history.pop().undo()
