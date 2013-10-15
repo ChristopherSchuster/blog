@@ -1,0 +1,16 @@
+Introduction to Twisted Framework
+
+<p>Twisted is an event-driven networking engine written in Python. A lot of information that covers a lot
+of different topics can be viewd at the <a href=""> project's website</a> . This post shows a basic example
+based on the official documentation.
+</p>
+
+<h3>Time UUID server example</h3>
+
+<p>Let's suppose that we have a distribuited system, with more than one application server that needs to insert
+records on a database cluster that is shared for the entire system, the primary key of some tables in this 
+database are <a href="http://en.wikipedia.org/wiki/Universally_unique_identifier"> Universally unique identifier UUID type </a> this keys has to be <strong>unique</strong> so we decided develop a service that will return
+a serial time UUID that will be sequencially different for every request as is shown in the next figure:
+</p>
+
+
