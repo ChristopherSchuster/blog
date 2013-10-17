@@ -1,28 +1,27 @@
-Introduction to Twisted Framework
+Introducción a Twisted Framework
 
-<p>Twisted is an event-driven networking engine written in Python. A lot of information that covers a lot
-of different topics can be viewd at the <a href="http://twistedmatrix.com/trac/"> project's website</a> . This post shows a basic example
-based on the official documentation.
+<p>Twisted es un framework escrito en python orientado a eventos que permite implemntar sistemas 
+as&iacute;ncronos. En el  <a href="http://twistedmatrix.com/trac/">sitio web del proyecto</a> se puede encontrar
+mucha informaci&oacute;n. Este post muestra un ejemplo muy b&aacute;sico basado en esta documentaci&oacute;n
 </p>
 
-<h3>Time UUID server example</h3>
+<h3>Ejemplo de servidor Time UUID </h3>
 
-<p>Let's suppose that we have a distribuited system, with more than one application server that needs to insert
-records on a database cluster that is shared for the entire system, the primary key of some tables in this 
-database are <a href="http://en.wikipedia.org/wiki/Universally_unique_identifier"> Universally unique identifier UUID type </a> this keys has to be <strong>unique</strong> so we decided develop a service that will return
-a serial time UUID that will be sequencially different for every request as is shown in the next figure:
+<p>Supongamos que tenemos un sistema distribuido donde tenemos varios servidores de aplicaciones que comparten
+un mismo cluster de base de datos, las llaves primarias de algunas tablas necesitan una llave primaria secuencial
+y &uacute;nica basada en  <a href="http://en.wikipedia.org/wiki/Universally_unique_identifier"> Universally unique identifier UUID</a> por lo tanto decidimos implementar un servicio que nos dara estos identificadores:
 </p>
 
 <img class="img-polaroid" src="https://raw.github.com/maigfrga/blog/master/2013/10/intro-twisted/timeuuidsystem.png" />
 
-<h3>Writing The Server</h3>
+<h3>El servidor</h3>
 
-<h4>The Protocol</h4>
+<h4>El Protocolo</h4>
 
-<p>The main goal is implement a network protocol parsing and handling for TCP servers. This protocol will be 
-a subclass of <a href="http://twistedmatrix.com/documents/13.1.0/api/twisted.internet.protocol.Protocol.html">twisted.internet.protocol.Protocol</a>. An instance of the protocol class is instantiated per-connection, on 
-demand, and will go away when the connection is finished. This means that persistent configuration is not 
-saved in the Protocol.</p>
+<p>El principal objecti es implementar un protocolo de red que interactue con servidores TCP, este protocolo 
+es una subclase de  <a href="http://twistedmatrix.com/documents/13.1.0/api/twisted.internet.protocol.Protocol.html">twisted.internet.protocol.Protocol</a>. Una instancia de esta clase es instanciada por conecci&oacute;n y se 
+elimina cuando la petici&oacute;n finaliza, las opciones de configuraci&oacute;n no son almacenadas en el 
+protocolo.</p>
 
 <pre>
     from twisted.internet import reactor
@@ -59,11 +58,12 @@ saved in the Protocol.</p>
 
 </pre>
 
-<h4>The Factory</h4>
+<h4>Factory</h4>
 
-<p>A design goal must be the possibility to expose the service on  multiple ports or network addresses. That's
-the reason why configuration will be defined using a Factory class that will be a child from 
-<a href="http://twistedmatrix.com/documents/13.1.0/api/twisted.internet.protocol.Factory.html">twisted.internet.protocol.Factory</a>. The buildProtocol method of the Factory is used to create a Protocol for each new connection.
+<p>Un objetivo de dise&ntilde;o debe ser la posibilidad de exponer este servicio en m&uacute;ltiples puertos or
+direcciones de red. Es por esta raz&oacute;n que los detalles de configuraci&oacute;n se definen en una clase
+Factory que es subclase de <a href="http://twistedmatrix.com/documents/13.1.0/api/twisted.internet.protocol.Factory.html">twisted.internet.protocol.Factory</a>. El m&eacute;todo buildProtocol de la clase Factory  es usado para
+crear una instancia Protocol por cada conexi&oacute;n.
 </p>
 
 <pre>
@@ -78,14 +78,14 @@ the reason why configuration will be defined using a Factory class that will be 
             return TimeUUId()
 </pre>
 
-<h4>Starting the Server</h4>
+<h4>Iniciando el servidor</h4>
 
 <pre>
     reactor.listenTCP(1320, TimeUUIdFactory())
     reactor.run()
 </pre>
 
-<h4>Testing the Server</h4>
+<h4>Probando el servidor</h4>
 
 <pre>
     $ telnet 127.0.0.1 1320
@@ -108,11 +108,11 @@ the reason why configuration will be defined using a Factory class that will be 
     Connection closed by foreign host.
 </pre>
 
-<h3>Writing the client</h3>
+<h3>Escribiendo el cliente</h3>
 
-<h4>The protocol</h4>
+<h4>El protocolo</h4>
 
-<p>The class that implents the protocol parsing and hadling is the protocol class, which is  a subclass of 
+<p>La clase que implenta la logica para manejar el parseo y las llamadas es subclase de  
 <a href="http://twistedmatrix.com/documents/13.1.0/api/twisted.internet.protocol.Protocol.html">twisted.internet.protocol.Protocol</a>
 </p>
 
@@ -151,7 +151,7 @@ the reason why configuration will be defined using a Factory class that will be 
                 self.ask_option()
 </pre>
 
-<h4>The Factory</h4>
+<h4>Factory</h4>
 
 <pre>
     class TimeUUIdClientFactory(ClientFactory):
@@ -169,7 +169,7 @@ the reason why configuration will be defined using a Factory class that will be 
             reactor.stop()
 </pre>
 
-<h4>Running the client</h4>
+<h4>Ejecutando el cliente</h4>
 
 <pre>
     # create factory protocol and application
@@ -183,5 +183,5 @@ the reason why configuration will be defined using a Factory class that will be 
 </pre>
 
 <p>
-<a href=""> Sorce code can be viewed at this link. </a>
+<a href="https://github.com/maigfrga/blog/tree/master/2013/10/intro-twisted/code">El c&oacute;digo fuente puede ser encontrado en este enlace. </a>
 </p>
