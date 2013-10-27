@@ -1,0 +1,177 @@
+https://wiki.archlinux.org/index.php/Installation_Guide
+
+
+make a bootable usb
+sudo dd bs=4M if=/home/manuel/Downloads/archlinux-2013.10.01-dual.iso of=/dev/sdx && sync
+
+
+
+
+Load keyboard layout
+loadkeys us
+loadkeys es
+
+
+https://wiki.archlinux.org/index.php/Partitioning
+
+check hard disk size
+fdisk -l | grep Disk
+
+/boot 300MB
+SWAP 2GB
+/var 22GB
+/ 24 GB
+/home 280GB
+
+gdisk /dev/sda
+
+? for help
+
+o to create a new empty GUID partition table
+n to add new partition
+i show info
+w write disk partition table
+
+lsblk to check all partitions
+
+https://wiki.archlinux.org/index.php/File_Systems#Step_2:_create_the_new_file_system
+
+mkfs -t ext2 /dev/sda1
+mkfs -t ext4 /dev/sda2
+mkfs -t ext4 /dev/sda3
+mkfs -t ext4 /dev/sda4
+mkswap /dev/sda5
+
+https://wiki.archlinux.org/index.php/Disk_Encryption
+
+https://wiki.archlinux.org/index.php/Dm-crypt_with_LUKS
+
+Secure erasure of the hard disk drive 
+
+Securely wipe disk
+https://wiki.archlinux.org/index.php/Securely_wipe_disk
+dd if=/dev/zero of=/dev/sdX iflag=nocache oflag=direct bs=4096
+
+
+Encrypting a system partition 
+https://wiki.archlinux.org/index.php/Dm-crypt_with_LUKS#Encrypting_a_system_partition
+
+Mapping Physical Partitions to LUKS
+cryptsetup --cipher aes-xts-plain64 --key-size 512 --hash sha512 --iter-time 5000 --use-random --verify-passphrase luksFormat /dev/sda2
+cryptsetup --cipher aes-xts-plain64 --key-size 512 --hash sha512 --iter-time 5000 --use-random --verify-passphrase luksFormat /dev/sda3
+cryptsetup --cipher aes-xts-plain64 --key-size 512 --hash sha512 --iter-time 5000 --use-random --verify-passphrase luksFormat /dev/sda4
+
+
+Open encrypted partition
+cryptsetup open --type luks /dev/sda2 root
+cryptsetup open --type luks /dev/sda3 var
+cryptsetup open --type luks /dev/sda4 home
+
+Format partitions
+mkfs -t ext4 /dev/mapper/root
+mkfs -t ext4 /dev/mapper/var
+mkfs -t ext4 /dev/mapper/home
+
+Mounting Partitions
+mount -t ext4 /dev/mapper/root /mnt
+mount -t ext4 /dev/mapper/var /mnt
+mount -t ext4 /dev/mapper/home /mnt
+
+
+
+
+Note: /boot partition can not be encrypted
+
+
+Encrypting the Swap partition 
+edit/etc/crypttab 
+swap         /dev/hdx4        /dev/urandom            swap,cipher=aes-cbc-essiv:sha256,size=256
+
+
+Mounting /boot Partition:
+mkdir /mnt/boot
+mount -t ext2 /dev/sda1 /mnt/boot
+
+Connect to the internet
+wifi-menu
+
+Install the base system 
+Edit/etc/pacman.d/mirrorlist and configure your mirror
+pacstrap /mnt base
+
+
+Generate an fstab
+genfstab -p /mnt >> /mnt/etc/fstab
+
+Install chroot
+arch-chroot /mnt
+
+Write your hostname to /etc/hostname
+
+Symlink /etc/localtime to /usr/share/zoneinfo/Zone/SubZone. Replace Zone and Subzone to your liking
+ln -s /usr/share/zoneinfo/Europe/Dublin /etc/localtime
+
+Uncomment the selected locale in /etc/locale.gen and generate it with locale-gen
+Set locale preferences in /etc/locale.conf
+https://wiki.archlinux.org/index.php/Locale#Setting_system-wide_locale
+
+
+Edit /etc/locale.conf
+LANG=EN_IE.UTF-8
+
+
+Configure initramfs
+Edit /etc/mkinitcpio.conf and uncomment the next line:
+
+HOOKS="base udev ... encrypt ... filesystems ..."
+
+mkinitcpio -p linux
+
+Set a root password with passwd
+
+Setting wireless connection
+https://wiki.archlinux.org/index.php/Wireless_Setup
+
+Check the driver status
+lspci -k
+
+Also check the output of ip link command to see if a wireless interface (e.g. wlan0, wlp2s1, ath0)
+ip link set wlan0 up
+
+Install iw tool
+pacman -S iw
+
+Check device status
+iw dev wlan0 link
+iw dev wlan0 scan | less
+
+See what access points are available:
+ 
+
+iw dev wlan0 scan | less
+
+install wpa_supplicant
+pacman -S wpa_supplicant
+
+
+Install syslinux
+pacman -S syslinux
+pacman -S gptfdisk
+syslinux-install_update -i -a -m
+
+/boot/syslinux/syslinux.cfg
+
+ PROMPT 1
+ TIMEOUT 50
+ DEFAULT arch
+ 
+ LABEL arch
+         LINUX ../vmlinuz-linux
+         APPEND root=/dev/sda2 rw
+         INITRD ../initramfs-linux.img
+ 
+ LABEL archfallback
+         LINUX ../vmlinuz-linux
+         APPEND root=/dev/sda2 rw
+         INITRD ../initramfs-linux-fallback.img
+
