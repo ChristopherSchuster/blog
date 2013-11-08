@@ -92,7 +92,7 @@ Mounting /boot Partition:
 mkdir /mnt/boot
 mount -t ext2 /dev/sda1 /mnt/boot
 
-Connect to the internet
+Connect provisionally to the internet
 wifi-menu
 
 Install the base system 
@@ -153,7 +153,7 @@ iw dev wlan0 scan | less
 install wpa_supplicant
 pacman -S wpa_supplicant
 
-
+Install and configure a boot loader 
 Install syslinux
 pacman -S syslinux
 pacman -S gptfdisk
@@ -175,3 +175,48 @@ syslinux-install_update -i -a -m
          APPEND root=/dev/sda2 rw
          INITRD ../initramfs-linux-fallback.img
 
+
+
+Install video driver
+
+Check video driver chipset:
+lspci | grep VGA
+Install the proper driver, in this example, an intel driver
+pacman -S xf86-video-intel
+
+
+Install network manager
+https://wiki.archlinux.org/index.php/NetworkManager
+
+pacman -S  networkmanager
+
+Install Gnome and graphical login screen
+https://wiki.archlinux.org/index.php/GNOME
+pacman -S gnome gnome-extra
+network-manager-applet
+pacman -S gstreamer
+pacman -S --force gst-libav
+pacman -S vlc
+pacman -S flashplugin
+
+
+Install Linux Headers
+pacman -S linux-headers
+
+Install c compiler
+pacman -S gcc
+
+Install virtualenv
+https://wiki.archlinux.org/index.php/Python_VirtualEnv
+pacman -S python-virtualenv
+pacman -Spython-virtualenvwrapper 
+
+edit ~/.bashrc and add:
+
+export WORKON_HOME=~/.virtualenvs
+source /usr/bin/virtualenvwrapper.sh
+
+Install postgresql
+https://wiki.archlinux.org/index.php/PostgreSQL
+
+pacman -S postgresq
