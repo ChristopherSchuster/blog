@@ -1,222 +1,277 @@
-https://wiki.archlinux.org/index.php/Installation_Guide
+Installing Archlinux
+
+<p>Modern linux distributions are really easy to install, every almost flavor has a guided process
+that helps an user setup a linux box with a series of steps that deploy almost automatically the system. 
+That is really helpful but if don't have real control about whats is really happen. Archlinux is a linux
+distribution that have a different philosofy where the user has all the control of your system. This post
+is a simple resume about my personal experience installing an archlinux box following the 
+<a href="https://wiki.archlinux.org/index.php/Installation_Guide">Official documentacion.</a>
+</p>
 
 
-make a bootable usb
-sudo dd bs=4M if=/home/manuel/Downloads/archlinux-2013.10.01-dual.iso of=/dev/sdx && sync
+<h3>Making a bootable usb</h3>
+
+<pre>
+    sudo dd bs=4M if=/home/manuel/Downloads/archlinux-2013.10.01-dual.iso of=/dev/sdx && sync
+</pre>
 
 
+<h3>Loading keyboard layout</h3>
+<pre>
+    loadkeys us
+    loadkeys es
+</pre>
 
 
-Load keyboard layout
-loadkeys us
-loadkeys es
+<h3>Setting up the hard drive</h3>
+<h4>Partitioning hard drive</h4>
+<p>
+    The complete instructions to make the partitions are 
+    <a href="https://wiki.archlinux.org/index.php/Partitioning">here</a>
+</p>
+
+<pre>
+    check hard disk size
+    fdisk -l | grep Disk
+
+    /boot 300MB
+    SWAP 2GB
+    /var 22GB
+    / 24 GB
+    /home 280GB
+
+    gdisk /dev/sda
+
+    ? for help
+
+    o to create a new empty GUID partition table
+    n to add new partition
+    i show info
+    w write disk partition table
+
+    lsblk to check all partitions
+
+    https://wiki.archlinux.org/index.php/File_Systems#Step_2:_create_the_new_file_system
+
+    mkfs -t ext2 /dev/sda1
+    mkfs -t ext4 /dev/sda2
+    mkfs -t ext4 /dev/sda3
+    mkfs -t ext4 /dev/sda4
+    mkswap /dev/sda5
+</pre>
 
 
-https://wiki.archlinux.org/index.php/Partitioning
+<h4>Encrypting hard drive</h4>
+<p>
+    https://wiki.archlinux.org/index.php/Disk_Encryption
 
-check hard disk size
-fdisk -l | grep Disk
+    https://wiki.archlinux.org/index.php/Dm-crypt_with_LUKS
+</p>
 
-/boot 300MB
-SWAP 2GB
-/var 22GB
-/ 24 GB
-/home 280GB
+<h5>Secure wipe of the hard disk drive</h5>
 
-gdisk /dev/sda
-
-? for help
-
-o to create a new empty GUID partition table
-n to add new partition
-i show info
-w write disk partition table
-
-lsblk to check all partitions
-
-https://wiki.archlinux.org/index.php/File_Systems#Step_2:_create_the_new_file_system
-
-mkfs -t ext2 /dev/sda1
-mkfs -t ext4 /dev/sda2
-mkfs -t ext4 /dev/sda3
-mkfs -t ext4 /dev/sda4
-mkswap /dev/sda5
-
-https://wiki.archlinux.org/index.php/Disk_Encryption
-
-https://wiki.archlinux.org/index.php/Dm-crypt_with_LUKS
-
-Secure erasure of the hard disk drive 
-
-Securely wipe disk
-https://wiki.archlinux.org/index.php/Securely_wipe_disk
+<p>https://wiki.archlinux.org/index.php/Securely_wipe_disk</p>
+<pre>
 dd if=/dev/zero of=/dev/sdX iflag=nocache oflag=direct bs=4096
+</pre>
 
-
-Encrypting a system partition 
+<h5>Encrypting  and mapping a system partition</h5>
+<p>
 https://wiki.archlinux.org/index.php/Dm-crypt_with_LUKS#Encrypting_a_system_partition
+</p>
 
-Mapping Physical Partitions to LUKS
+<pre>
 cryptsetup --cipher aes-xts-plain64 --key-size 512 --hash sha512 --iter-time 5000 --use-random --verify-passphrase luksFormat /dev/sda2
 cryptsetup --cipher aes-xts-plain64 --key-size 512 --hash sha512 --iter-time 5000 --use-random --verify-passphrase luksFormat /dev/sda3
 cryptsetup --cipher aes-xts-plain64 --key-size 512 --hash sha512 --iter-time 5000 --use-random --verify-passphrase luksFormat /dev/sda4
+</pre>
 
+<h5>Open encrypted partitions: </h5>
 
-Open encrypted partition
+<pre>
 cryptsetup open --type luks /dev/sda2 root
 cryptsetup open --type luks /dev/sda3 var
 cryptsetup open --type luks /dev/sda4 home
+</pre>
 
-Format partitions
+<h5>Format partitions: </h5>
+
+<pre>
 mkfs -t ext4 /dev/mapper/root
 mkfs -t ext4 /dev/mapper/var
 mkfs -t ext4 /dev/mapper/home
+</pre>
 
-Mounting Partitions
+<h5>Mounting Partitions</h5>
+
+<pre>
 mount -t ext4 /dev/mapper/root /mnt
 mount -t ext4 /dev/mapper/var /mnt
 mount -t ext4 /dev/mapper/home /mnt
+</pre>
 
+<p>
+<strong>Note:</strong> /boot partition can not be encrypted
+</p>
 
-
-
-Note: /boot partition can not be encrypted
-
-
-Encrypting the Swap partition 
-edit/etc/crypttab 
+<h5>Encrypting the Swap partition</h5>
+<p>Edit/etc/crypttab</p>
+<pre>
 swap         /dev/hdx4        /dev/urandom            swap,cipher=aes-cbc-essiv:sha256,size=256
+</pre>
 
 
-Mounting /boot Partition:
+<h5> Mounting /boot Partition:</h5>
+
+<pre>
 mkdir /mnt/boot
 mount -t ext2 /dev/sda1 /mnt/boot
+</pre>
 
-Connect provisionally to the internet
+<h4>Connect provisionally to the internet </h4>
+
+<pre>
 wifi-menu
+</pre>
 
-Install the base system 
-Edit/etc/pacman.d/mirrorlist and configure your mirror
+<h4>Install the base system</h4>
+
+<p>Edit/etc/pacman.d/mirrorlist and configure your mirror, then run:</p>
+
+<pre>
 pacstrap /mnt base
+</pre>
 
 
-Generate an fstab
-genfstab -p /mnt >> /mnt/etc/fstab
+<h4>Generate an fstab:</h4>
+<pre>genfstab -p /mnt >> /mnt/etc/fstab</pre>
 
-Install chroot
-arch-chroot /mnt
+<h4>Install chroot</h4>
 
-Write your hostname to /etc/hostname
+<pre>arch-chroot /mnt</pre>
 
-Symlink /etc/localtime to /usr/share/zoneinfo/Zone/SubZone. Replace Zone and Subzone to your liking
-ln -s /usr/share/zoneinfo/Europe/Dublin /etc/localtime
-
+<h4>Timezone configuration</h4>
+<p>Symlink /etc/localtime to /usr/share/zoneinfo/Zone/SubZone. Replace Zone and Subzone to your liking. </p>
+<pre>ln -s /usr/share/zoneinfo/Europe/Dublin /etc/localtime</pre>
+<p>
 Uncomment the selected locale in /etc/locale.gen and generate it with locale-gen
 Set locale preferences in /etc/locale.conf
 https://wiki.archlinux.org/index.php/Locale#Setting_system-wide_locale
 
-
 Edit /etc/locale.conf
 LANG=EN_IE.UTF-8
+</p>
 
-
-Configure initramfs
+<p>Configure initramfs
 Edit /etc/mkinitcpio.conf and uncomment the next line:
 
 HOOKS="base udev ... encrypt ... filesystems ..."
 
-mkinitcpio -p linux
+Then execute  <code>mkinitcpio -p linux</code>
+</p>
 
-Set a root password with passwd
 
-Setting wireless connection
-https://wiki.archlinux.org/index.php/Wireless_Setup
+<p>Set a root password with <code>passwd</code></p>
 
-Check the driver status
-lspci -k
-
+<h4>Setting wireless connection</h4>
+<p>
+Complete informatin at this <a href="https://wiki.archlinux.org/index.php/Wireless_Setup">link</a>
+</p>
+<p> check the driver status with <code>lspci -k</code><br>
 Also check the output of ip link command to see if a wireless interface (e.g. wlan0, wlp2s1, ath0)
-ip link set wlan0 up
+<code> ip link set wlan0 up</code>
+</p>
 
-Install iw tool
+
+<p>Install iw tool</p>
+<pre>
 pacman -S iw
+</pre>
 
-Check device status
+<p>Check device status</p>
+
+<pre>
 iw dev wlan0 link
 iw dev wlan0 scan | less
+</pre>
 
-See what access points are available:
+<p>Check what access points are available:</p>
  
-
+<pre>
 iw dev wlan0 scan | less
+</pre>
 
-install wpa_supplicant
+<p>install wpa_supplicant:</p>
+<pre>
 pacman -S wpa_supplicant
-
-Install and configure a boot loader 
-Install syslinux
-pacman -S syslinux
-pacman -S gptfdisk
-syslinux-install_update -i -a -m
-
-/boot/syslinux/syslinux.cfg
-
- PROMPT 1
- TIMEOUT 50
- DEFAULT arch
- 
- LABEL arch
-         LINUX ../vmlinuz-linux
-         APPEND root=/dev/sda2 rw
-         INITRD ../initramfs-linux.img
- 
- LABEL archfallback
-         LINUX ../vmlinuz-linux
-         APPEND root=/dev/sda2 rw
-         INITRD ../initramfs-linux-fallback.img
+</pre>
 
 
+<h4>Install and configure Syslinux boot loader </h4>
 
-Install video driver
+<pre>
+    pacman -S syslinux
+    pacman -S gptfdisk
+    syslinux-install_update -i -a -m
 
-Check video driver chipset:
-lspci | grep VGA
-Install the proper driver, in this example, an intel driver
-pacman -S xf86-video-intel
+    /boot/syslinux/syslinux.cfg
+
+     PROMPT 1
+     TIMEOUT 50
+     DEFAULT arch
+     
+     LABEL arch
+             LINUX ../vmlinuz-linux
+             APPEND root=/dev/sda2 rw
+             INITRD ../initramfs-linux.img
+     
+     LABEL archfallback
+             LINUX ../vmlinuz-linux
+             APPEND root=/dev/sda2 rw
+             INITRD ../initramfs-linux-fallback.img
+
+</pre>
 
 
-Install network manager
-https://wiki.archlinux.org/index.php/NetworkManager
+<h4>Install video driver</h4>
 
-pacman -S  networkmanager
+<p>Check video driver chipset <code>lspci | grep VGA</code> and
+install the proper driver, in this example, an intel driver
+<code>pacman -S xf86-video-intel</code></p>
 
-Install Gnome and graphical login screen
-https://wiki.archlinux.org/index.php/GNOME
-pacman -S gnome gnome-extra
-network-manager-applet
+
+<h4>Install network manager</h4>
+<p>https://wiki.archlinux.org/index.php/NetworkManager
+
+<code>pacman -S  networkmanager</code>
+</p>
+
+<h4>Install Gnome and graphical login screen</h4>
+<p>https://wiki.archlinux.org/index.php/GNOME</p>
+<pre>
+pacman -S gnome gnome-extra network-manager-applet
 pacman -S gstreamer
 pacman -S --force gst-libav
 pacman -S vlc
 pacman -S flashplugin
+pacman -S ttf-dejavu
+</pre>
 
-
-Install Linux Headers
+<h4>Basic development Libraries and utils</h4>
+<pre>
 pacman -S linux-headers
+pacman -S gcc make automake
+</pre>
 
-Install c compiler
-pacman -S gcc
+<h4>Adding an userand setting sudo</h4>
+<pre>
+useradd -m -g users -s /bin/bash manuel
+pacman -S sudo
+</pre>
 
-Install virtualenv
-https://wiki.archlinux.org/index.php/Python_VirtualEnv
-pacman -S python-virtualenv
-pacman -Spython-virtualenvwrapper 
+<p>Edit configuration file using <code>visudo</code>
 
-edit ~/.bashrc and add:
+Add the user relevant information:</p>
 
-export WORKON_HOME=~/.virtualenvs
-source /usr/bin/virtualenvwrapper.sh
+<pre>manuel ALL=(ALL) ALL</pre>
 
-Install postgresql
-https://wiki.archlinux.org/index.php/PostgreSQL
-
-pacman -S postgresq
