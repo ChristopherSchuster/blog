@@ -155,11 +155,101 @@ por los valores requeridos. </p>
 <pre>ln -s /usr/share/zoneinfo/Europe/Dublin /etc/localtime</pre>
 
 <p>
-
-Uncomment the selected locale in /etc/locale.gen and generate it with locale-gen
-Set locale preferences in /etc/locale.conf
-https://wiki.archlinux.org/index.php/Locale#Setting_system-wide_locale
-
-Edit /etc/locale.conf
-LANG=EN_IE.UTF-8
+Descomentar timezone seleccionado en /etc/locale.gen y ejecutar <code>locale-gen</code>, editar preferencias en
+<code>/etc/locale.conf</code>. https://wiki.archlinux.org/index.php/Locale#Setting_system-wide_locale
 </p>
+
+<h4>Configurar initramfs</h4>
+<p>
+Editar /etc/mkinitcpio.conf and descomentar la siguiente l&iacute;nea:
+
+HOOKS="base udev ... encrypt ... filesystems ..."
+
+Luego ejecutar  <code>mkinitcpio -p linux</code>
+</p>
+
+<h4>Configurar wifi</h4>
+<h5>Instalar iw tool</h5>
+<pre>
+pacman -S iw
+</pre>
+
+<h5>Buscar puntos de acceso disponibles:</h5>
+ 
+<pre>
+iw dev wlan0 scan | less
+</pre>
+
+<h5>install wpa_supplicant:</h5>
+<pre>
+pacman -S wpa_supplicant
+</pre>
+
+<p>Informaci&oacute;n detallada en https://wiki.archlinux.org/index.php/Wireless_Setup </p>
+
+<h4>Instalar y configurar Syslinux boot loader</h4>
+
+<pre>
+    pacman -S syslinux
+    pacman -S gptfdisk
+    syslinux-install_update -i -a -m
+
+    /boot/syslinux/syslinux.cfg
+
+     PROMPT 1
+     TIMEOUT 50
+     DEFAULT arch
+     
+     LABEL arch
+             LINUX ../vmlinuz-linux
+             APPEND root=/dev/sda2 rw
+             INITRD ../initramfs-linux.img
+     
+     LABEL archfallback
+             LINUX ../vmlinuz-linux
+             APPEND root=/dev/sda2 rw
+             INITRD ../initramfs-linux-fallback.img
+
+</pre>
+
+<h4>Instalar video driver </h4>
+
+<p>Verificar el chipset <code>lspci | grep VGA</code> e instalar en controlador apropiado,
+en este ejemplo un controlador intel
+<code>pacman -S xf86-video-intel</code></p>
+
+
+<h4>Instalar network manager</h4>
+<p>https://wiki.archlinux.org/index.php/NetworkManager
+
+<code>pacman -S  networkmanager</code>
+</p>
+
+<h4>Instalar Gnome and login grafico</h4>
+<p>https://wiki.archlinux.org/index.php/GNOME</p>
+<pre>
+pacman -S gnome gnome-extra network-manager-applet
+pacman -S gstreamer
+pacman -S --force gst-libav
+pacman -S vlc
+pacman -S flashplugin
+pacman -S ttf-dejavu
+</pre>
+
+<h4>Librer&iacute:as b&aacute;sicas de desarrollo</h4>
+<pre>
+pacman -S linux-headers
+pacman -S gcc make automake
+</pre>
+
+<h4>Creando un usuario y configurando sudo</h4>
+<pre>
+useradd -m -g users -s /bin/bash manuel
+pacman -S sudo
+</pre>
+
+<p>Editar archivo config con el comando  <code>visudo</code>
+
+y agregar informaci&oacute; relevante:</p>
+
+<pre>manuel ALL=(ALL) ALL</pre>

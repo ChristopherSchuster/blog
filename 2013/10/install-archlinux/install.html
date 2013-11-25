@@ -162,7 +162,8 @@ Edit /etc/locale.conf
 LANG=EN_IE.UTF-8
 </p>
 
-<p>Configure initramfs
+<h4>Configure initramfs</h4>
+<p>
 Edit /etc/mkinitcpio.conf and uncomment the next line:
 
 HOOKS="base udev ... encrypt ... filesystems ..."
@@ -183,29 +184,31 @@ Also check the output of ip link command to see if a wireless interface (e.g. wl
 </p>
 
 
-<p>Install iw tool</p>
+<h4>Wireless setup</h4>
+<h5>Install iw tool</h5>
 <pre>
 pacman -S iw
 </pre>
 
-<p>Check device status</p>
+<Check device status</p>
 
 <pre>
 iw dev wlan0 link
 iw dev wlan0 scan | less
 </pre>
 
-<p>Check what access points are available:</p>
+<h5>Check what access points are available:</h5>
  
 <pre>
 iw dev wlan0 scan | less
 </pre>
 
-<p>install wpa_supplicant:</p>
+<h5>install wpa_supplicant:</h5>
 <pre>
 pacman -S wpa_supplicant
 </pre>
 
+<p>Detailed info can be viewed at https://wiki.archlinux.org/index.php/Wireless_Setup </p>
 
 <h4>Install and configure Syslinux boot loader </h4>
 
@@ -233,7 +236,9 @@ pacman -S wpa_supplicant
 </pre>
 
 
-<h4>Install video driver</h4>
+
+
+<h4>Install video driver </h4>
 
 <p>Check video driver chipset <code>lspci | grep VGA</code> and
 install the proper driver, in this example, an intel driver
@@ -263,7 +268,7 @@ pacman -S linux-headers
 pacman -S gcc make automake
 </pre>
 
-<h4>Adding an userand setting sudo</h4>
+<h4>Adding an user and setting sudo</h4>
 <pre>
 useradd -m -g users -s /bin/bash manuel
 pacman -S sudo
