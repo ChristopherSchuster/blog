@@ -158,6 +158,12 @@ por los valores requeridos. </p>
 Descomentar timezone seleccionado en /etc/locale.gen y ejecutar <code>locale-gen</code>, editar preferencias en
 <code>/etc/locale.conf</code>. https://wiki.archlinux.org/index.php/Locale#Setting_system-wide_locale
 </p>
+<p>
+Editar /etc/locale.conf
+LANG=EN_IE.UTF-8
+LANGUAGE="en_IE:es_CO:en"
+LC_COLLATE="C"
+</p>
 
 <h4>Configurar initramfs</h4>
 <p>
@@ -174,10 +180,30 @@ Luego ejecutar  <code>mkinitcpio -p linux</code>
 pacman -S iw
 </pre>
 
+<h5>Obtener el nombre del dispositivo de red:</h5>
+
+<pre>
+   $ iw dev
+    phy#0
+	Interface wlp5z1
+		ifindex 4
+		wdev 0x1
+		addr 6c:88:14:6e:d9:90
+		type managed
+		channel 6 (2437 MHz), width: 20 MHz, center1: 2437 MHz 
+</pre>
+
+<h5> Revisar estado del dispositivo</h5>
+<pre>
+    $ iw dev  wlp5z1 link
+    Not connected.
+</pre>
+
+
 <h5>Buscar puntos de acceso disponibles:</h5>
  
 <pre>
-iw dev wlan0 scan | less
+iw dev wlan0 wlp5z1 | less
 </pre>
 
 <h5>install wpa_supplicant:</h5>
