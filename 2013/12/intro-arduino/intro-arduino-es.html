@@ -1,0 +1,203 @@
+<p>
+Arduino es una plataforma de hardware abierto dise&ntilde;ana con el fin de 
+permtir a personas sin produndos conocimientos eletronicos crear objectos 
+interactivos , este post es una introducci&oacute;n a esta plataforma, gran parte
+de la informaci&oacute;n ha sido obtenida de la 
+This post is an introduction, most of the information has been taken from  <a href="http://arduino.cc/"> web oficial de arduino </a>.
+Algunas imagenes han sido creadas  con el software libre<a href="http://fritzing.org/download/">Fritzing</a>
+</p>
+
+<h3>Instalaci&oacute;n</h3>
+<p>El IDE de Arduino es multiplataforma,  en el siguiente enlace las instrucciones de instalaci&oacute;n http://arduino.cc/en/Main/Software 
+</p>
+
+<h3>Encendiendo y pagando un Led</h3>
+<p>El ejemplo mas b&acute;sico para probar la tarjeta es encender y apagar un led, el tutorial completo de como hacer esto en el siguiente
+
+<a href="http://arduino.cc/en/Tutorial/Blink"> enlace</a>
+</p>
+<h4>El circuito</h4>
+<p>Unir una resistenica de 220-ohm resistor(bordes rojo y dorado) al el pin 13. 
+Luego unir la pata mas larga de led (pata positiva, anodo) a la resistencia.
+Unir la pata mas corta (negativa, catodo) a ground.</p>
+
+<div class="carousel slide" id="myCarousel">
+     <div class="carousel-inner">
+         <div class="item">
+            <img  src="http://arduino.cc/en/uploads/Tutorial/ExampleCircuit_bb.png"/>
+         </div>
+         <div class="item">
+            <img  src="http://1ce2d8614241e3ee39a0-8f6ac2648e8351faedbadb12b5b60365.r69.cf1.rackcdn.com/64/00/00229627e87711.jpg"/>
+         </div>
+     </div>
+                <!-- Carousel nav -->
+    <a data-slide="prev" href="#myCarousel" class="carousel-control left">‹</a>
+    <a data-slide="next" href="#myCarousel" class="carousel-control right">›</a>
+</div>
+
+<h4>El codigo</h4>
+<p>Abrir el IDE Arduino y pegar el siguiente codigo
+</p>
+<pre>
+const int LED = 13; // LED connected to
+                    // digital pin 13
+
+void setup()
+{
+  pinMode(LED, OUTPUT);    // sets the digital
+                           // pin as output
+}
+
+
+/**1. Turns on the led
+   2. Wait one second
+   3. Tuns off the led
+   4. Wait one second
+**/
+void loop()
+{
+  digitalWrite(LED, HIGH); 
+  delay(1000);               
+  digitalWrite(LED, LOW);  
+  delay(1000);              
+}
+</pre>
+
+<p>
+Compilar y subir el codigo a la tarjeta arduino.
+</p>
+
+<h3>Hola mundo en codigo morse</h3>
+
+<p><a href="http://en.wikipedia.org/wiki/Morse_code">El codigo morse</a> ha 
+sido usado por a&ntilde;s para comunicarse entre largas distancias, vamos a tratar de programar el arduino para que diga hello world en codigo morse:</p>
+<ul>
+    <li>H: <span style="font-size:30px;">....</span> </li>
+    <li>E: <span style="font-size:30px;">.</span> </li>
+    <li>L: <span style="font-size:30px;">.---</span> </li>
+    <li>O: <span style="font-size:30px;">---</span> </li>
+    <li>W: <span style="font-size:30px;">.--</span> </li>
+    <li>R: <span style="font-size:30px;">.-.</span> </li>
+    <li>D: <span style="font-size:30px;">-..</span> </li>
+</ul>
+
+<pre style="font-size:30px;">.... . .--- .--- ---  .-- --- .-. .--- -..</pre>
+
+<p>Por cada raya el led se iluminar&acute; 1.6 segundos, por cada punto 800
+milisegundos, el tiempo de espera entre letras es 500 milisegundos y entre palabras 1.5 segundos </p>
+
+<h4>El circuito</h4>
+
+<p>Es el mismo circuito, pero lo pasamos a la protoboard:<p>
+
+<div class="carousel slide" id="myCarousel2">
+     <div class="carousel-inner">
+         <div class="item">
+            <img  src="http://1ce2d8614241e3ee39a0-8f6ac2648e8351faedbadb12b5b60365.r69.cf1.rackcdn.com/64/00/00ab3bb890f106.png"/>
+         </div>
+         <div class="item">
+            <img  src="http://1ce2d8614241e3ee39a0-8f6ac2648e8351faedbadb12b5b60365.r69.cf1.rackcdn.com/64/00/00ce2c3b2dc5ec.png"/>
+         </div>
+     </div>
+                <!-- Carousel nav -->
+    <a data-slide="prev" href="#myCarousel2" class="carousel-control left">‹</a>
+    <a data-slide="next" href="#myCarousel2" class="carousel-control right">›</a>
+</div>
+
+<h4>El codigo</h4>
+<pre>
+    const int LED = 13; // LED connected to
+                        // digital pin 13
+
+
+    void setup()
+    {
+      pinMode(LED, OUTPUT);    // sets the digital
+                               // pin as output
+    }
+
+    void point(){
+      digitalWrite(LED, HIGH); 
+      delay(800);               
+      digitalWrite(LED, LOW);                  
+      delay(200);
+    }
+
+    void dash(){
+      digitalWrite(LED, HIGH); 
+      delay(1600);               
+      digitalWrite(LED, LOW);                
+      delay(200);
+    }
+
+
+
+    void space(){
+      delay(500);               
+    }
+
+    /**print "hello world" in morse code
+    **/
+    void sayHello(){
+      point();
+      point();
+      point();
+      point();
+      space();
+      point();
+      space();
+      point();
+      dash();
+      dash();
+      dash();
+      space();
+      point();
+      dash();
+      dash();
+      dash();
+      space();
+      dash();
+      dash();
+      dash();
+      space();
+      space();
+      space();
+      point();
+      dash();
+      dash();
+      space();
+      dash();
+      dash();
+      dash();
+      space();
+      point();
+      dash();
+      point();
+      space();
+      point();
+      dash();
+      dash();
+      dash();
+      space();
+      dash();
+      point();
+      point();
+      space();
+      space();
+      space();
+        
+
+    }
+
+    void loop()
+    {
+      sayHello();
+    }
+    
+</pre>
+
+
+<h4>Agregando un swith al circuito</h4>
+<div class="thumbnail">
+    <img src="http://1ce2d8614241e3ee39a0-8f6ac2648e8351faedbadb12b5b60365.r69.cf1.rackcdn.com/64/00/00f8dd0b205446.png"></img>
+</div>    

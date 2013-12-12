@@ -1,0 +1,202 @@
+<p>
+Arduino is a open source hardware plataform  for protoyping, makes easy for a non electronic engineer builds interative objects.
+This post is an introduction, most of the information has been taken from  <a href="http://arduino.cc/"> arduino website</a>.
+Some of the images has been create with <a href="http://fritzing.org/download/">Fritzing</a>
+</p>
+
+<h3>IDE Instalation</h3>
+<p>Arduino IDE is multiplatform, check this link to find the instructions for your plataform http://arduino.cc/en/Main/Software 
+</p>
+
+<h3>Blinkin a Led</h3>
+<p>
+The most basic example to test the arduino is blinking a led, a complete tutorial about this can be found a this 
+<a href="http://arduino.cc/en/Tutorial/Blink"> link</a>
+</p>
+<h4>The circuit</h4>
+<p>attach a 220-ohm resistor(red one end and gold another end) to pin 13. 
+Then attach the long leg of an LED (the positive leg, called the anode) to the resistor. 
+Attach the short leg (the negative leg, called the cathode) to ground
+</p>
+
+<div class="carousel slide" id="myCarousel">
+     <div class="carousel-inner">
+         <div class="item">
+            <img  src="http://arduino.cc/en/uploads/Tutorial/ExampleCircuit_bb.png"/>
+         </div>
+         <div class="item">
+            <img  src="http://1ce2d8614241e3ee39a0-8f6ac2648e8351faedbadb12b5b60365.r69.cf1.rackcdn.com/64/00/00229627e87711.jpg"/>
+         </div>
+     </div>
+                <!-- Carousel nav -->
+    <a data-slide="prev" href="#myCarousel" class="carousel-control left">‹</a>
+    <a data-slide="next" href="#myCarousel" class="carousel-control right">›</a>
+</div>
+
+<h4>The code</h4>
+<p>Open the arduino ide and paste the next code
+</p>
+<pre>
+const int LED = 13; // LED connected to
+                    // digital pin 13
+
+void setup()
+{
+  pinMode(LED, OUTPUT);    // sets the digital
+                           // pin as output
+}
+
+
+/**1. Turns on the led
+   2. Wait one second
+   3. Tuns off the led
+   4. Wait one second
+**/
+void loop()
+{
+  digitalWrite(LED, HIGH); 
+  delay(1000);               
+  digitalWrite(LED, LOW);  
+  delay(1000);              
+}
+</pre>
+
+<p>
+Compile and upload the code to the arduino board.
+</p>
+
+<h3>Saying hello world in morse code</h3>
+
+<p><a href="http://en.wikipedia.org/wiki/Morse_code">Morse code</a> has been
+used for years to communicate visually through great distances. Let's try
+To improve the blink skethc to say hello world, this in morse code is:
+</p>
+<ul>
+    <li>H: <span style="font-size:30px;">....</span> </li>
+    <li>E: <span style="font-size:30px;">.</span> </li>
+    <li>L: <span style="font-size:30px;">.---</span> </li>
+    <li>O: <span style="font-size:30px;">---</span> </li>
+    <li>W: <span style="font-size:30px;">.--</span> </li>
+    <li>R: <span style="font-size:30px;">.-.</span> </li>
+    <li>D: <span style="font-size:30px;">-..</span> </li>
+</ul>
+
+<pre style="font-size:30px;">.... . .--- .--- ---  .-- --- .-. .--- -..</pre>
+
+<p>For every dash the led will be on by 1 second, by every point for 0.5 second and between words willbe a 1.5 second delay </p>
+
+<h4>The circuit</h4>
+
+<p>Is the same circuit that the previous one, but this use the protoboard:<p>
+
+<div class="carousel slide" id="myCarousel2">
+     <div class="carousel-inner">
+         <div class="item">
+            <img  src="http://1ce2d8614241e3ee39a0-8f6ac2648e8351faedbadb12b5b60365.r69.cf1.rackcdn.com/64/00/00ab3bb890f106.png"/>
+         </div>
+         <div class="item">
+            <img  src="http://1ce2d8614241e3ee39a0-8f6ac2648e8351faedbadb12b5b60365.r69.cf1.rackcdn.com/64/00/00ce2c3b2dc5ec.png"/>
+         </div>
+     </div>
+                <!-- Carousel nav -->
+    <a data-slide="prev" href="#myCarousel2" class="carousel-control left">‹</a>
+    <a data-slide="next" href="#myCarousel2" class="carousel-control right">›</a>
+</div>
+
+<h4>The code</h4>
+<pre>
+    const int LED = 13; // LED connected to
+                        // digital pin 13
+
+
+    void setup()
+    {
+      pinMode(LED, OUTPUT);    // sets the digital
+                               // pin as output
+    }
+
+    void point(){
+      digitalWrite(LED, HIGH); 
+      delay(800);               
+      digitalWrite(LED, LOW);                  
+      delay(200);
+    }
+
+    void dash(){
+      digitalWrite(LED, HIGH); 
+      delay(1600);               
+      digitalWrite(LED, LOW);                
+      delay(200);
+    }
+
+
+
+    void space(){
+      delay(500);               
+    }
+
+    /**print "hello world" in morse code
+    **/
+    void sayHello(){
+      point();
+      point();
+      point();
+      point();
+      space();
+      point();
+      space();
+      point();
+      dash();
+      dash();
+      dash();
+      space();
+      point();
+      dash();
+      dash();
+      dash();
+      space();
+      dash();
+      dash();
+      dash();
+      space();
+      space();
+      space();
+      point();
+      dash();
+      dash();
+      space();
+      dash();
+      dash();
+      dash();
+      space();
+      point();
+      dash();
+      point();
+      space();
+      point();
+      dash();
+      dash();
+      dash();
+      space();
+      dash();
+      point();
+      point();
+      space();
+      space();
+      space();
+        
+
+    }
+
+    void loop()
+    {
+      sayHello();
+    }
+    
+</pre>
+
+
+<h4>Putting a Swith in the circuit</h4>
+<div class="thumbnail">
+    <img src="http://1ce2d8614241e3ee39a0-8f6ac2648e8351faedbadb12b5b60365.r69.cf1.rackcdn.com/64/00/00f8dd0b205446.png"></img>
+</div>
