@@ -1,0 +1,386 @@
+Asynchronous Programming with Tornado Framework
+<p>
+    In order to understand Asynchronous programming is important understand how
+    synchronous programming works and why it is a problem on high traffic websites.
+</p>
+
+
+<h3>A Simple Web Application Example</h3>
+
+
+<p>
+    Let's think about a web application build with one popular web framework
+    (django, flask, ruby on rails, java servlets, etc).
+
+    This application will run as a server and wait for request directly or behind a
+    web server like apache or nginx.
+
+    Our example application has to do the 4 next task every user request:
+</p>
+
+<ol>
+    <li> Create user in database</li>
+
+    <li> Send confirmation email to user.</li>
+
+    <li> Share social profile on social networks using external API providers.</li>
+
+    <li> Send response to the user</li>
+
+</ol>
+
+
+<h3>Synchronous Aproach</h3>
+
+<p>
+Every time that a client makes a request to a  Synchronous Web application, a
+thread takes care of this request and start perform the task sequentially, so
+let's suppose that connect, send information and wait response from database in
+order to perform the first step in the request takes 20 ms. in that time the
+thread can not do any other task because is waiting for the database response,
+so this thread is BLOCKED.
+</p>
+
+<p>
+After the database response the thread can continue its work, so now is time to
+send the email, the connection to the smpt server and send the email and get the
+response can take 60 ms, in this time the thread will be blocked again, and then
+same thing happen when send information to the socials API but this time the
+thread will have to wait 200 ms.
+
+So in total the thread will be inactive and BLOCKED = 20ms + 60ms + 200ms =
+280ms
+</p>
+
+<p> The next image shows the workflow for this approach</p>
+
+<img src="https://raw.github.com/maigfrga/blog/master/2014/01/intro-tornado-async/sync_example.png" class="img-polaroid">
+
+
+
+<h4>Code example</h4>
+
+<h5> The model</h5>
+
+<p>A simple user class that emulates the delay:</p>
+
+
+<pre>
+    import time
+
+
+    class User(object):
+        def save(self):
+            time.delay(0.2)
+
+        def send_email(self):
+            time.delay(0.6)
+
+        def social_api(self):
+            time.delay(2)
+
+</pre>
+
+
+<h5>The Server</h5>
+
+<p>
+A simple Http built with standard python library
+http://docs.python.org/3/library/http.server.html, any conventional
+python web framework (django, flask, bottle, pylons, etc) follow this
+philosophy: </p>
+
+<pre>
+    from models import User
+
+
+    from datetime import datetime
+
+    import http.server
+    import socketserver
+
+    class SyncServer(http.server.BaseHTTPRequestHandler):
+        def do_GET(self, *args, **kwargs):
+            user = User()
+            user.save()
+            user.send_email()
+            user.social_api()
+            self.send_response(200, message='ok')
+            self.end_headers()
+
+    def run():
+        PORT = 8000
+
+        Handler = SyncServer
+
+        httpd = socketserver.TCPServer(("", PORT), Handler)
+
+        print("serving at port", PORT)
+        httpd.serve_forever()
+
+
+    if __name__ == '__main__':
+        run()
+
+</pre>
+
+
+
+
+<h3> ASynchronous Approach</h3>
+
+<p>
+Every time that a request is made, the thread does not execute the tasks,
+instead of this defer the execution of all the task needed to be done to another moment.
+
+For me has been really hard try to understand what this means, so i'll try to
+explain with my own words that maybe doesn't fit the exact tecnhical definition:
+
+The Thread does not execute the tasks required to get the job done, instead
+the thread makes a list of these tasks and pass the control to another component
+who actually perform the task and will report to the main thread when the
+process is finish in order to send the response to the client.
+
+The big difference in this approach is the main thread is no blocked waiting for
+database, stmp and API responses, so is possible receive another request from
+another clients in the meantime.
+
+That can make a real big performance difference on heavy load web applications,
+that is not black magic, on both approachs some component have to wait 280ms
+between database access, smtp and API social connections. The big difference is
+that in synchronous approach the main thread will be blocked waiting for the
+response of every component, this not happen on the asynchronous approach
+because the main thread transfer the responsability of these task to another
+component and can continue processing client request in meantime. When the task
+finish the main thread is notified in order to finish the request and delivery
+response to the client.
+
+The biggest challenge when we want write asynchronous code is change our mental
+model and understand that the code is not executed by the main thread, instead 
+of this, the main thread transfer the control flow of this execution to another
+component that will execute the code in the future and will report the result to
+a callback function that must be defined. After the main thread delegates the
+responsability of this execution is free to continue the normal execution and
+doesn't wait for the response.
+</p>
+<p> The next image shows the workflow for this approach</p>
+
+<img src="https://raw.github.com/maigfrga/blog/master/2014/01/intro-tornado-async/async_example.png" class="img-polaroid">
+<h4> Futures python module</h4>
+
+<p>
+The concurrent.futures module provides a high-level interface for 
+asynchronously executing callables. This pattern was introduced in python 3.2 
+but is avaiable for older releases via pip, the official documentation for this
+module in this link:
+http://docs.python.org/3.4/library/concurrent.futures.html
+</p>
+
+<h4>Code Example using Tornado Framework</h4>
+
+<h5>The Model </h5>
+
+<p>
+We use the future feature http://www.tornadoweb.org/en/stable/concurrent.html
+in order to make our code asynchronous: </p>
+
+<pre>
+    import time
+    import datetime
+    from tornado.concurrent import return_future
+
+    class AsyncUser(object):
+        @return_future
+        def save(self, callback=None):
+            time.sleep(0.02)
+            result = datetime.datetime.utcnow()
+            callback(result)
+
+        @return_future
+        def send_email(self, callback=None):
+            time.sleep(0.06)
+            result = datetime.datetime.utcnow()
+            callback(result)
+
+        @return_future
+        def social_api(self, callback=None):
+            time.sleep(0.2)
+            result = datetime.datetime.utcnow()
+            callback(result)
+
+</pre>
+
+<p>
+The @return_future decorator make a function that returns via callback return a Future.
+
+The wrapped function should take a callback keyword argument and invoke it with one argument when it has finished. To signal failure, the function can simply raise an exception (which will be captured by the StackContext and passed along to the Future). 
+</p>
+
+<h5> The Server </h5>
+
+<p>
+tornado.gen is a generator-based interface to make it easier to work in an 
+asynchronous environment. The documentation can be found at this link:
+<a href="http://www.tornadoweb.org/en/stable/gen.html">http://www.tornadoweb.org/en/stable/gen.html </a>
+</p>
+
+<pre>
+
+    import tornado.httpserver
+    import tornado.ioloop
+    import tornado.options
+    import tornado.web
+
+    from tornado import gen
+
+    from models import AsyncUser
+
+    class Application(tornado.web.Application):
+        def __init__(self):
+            handlers = [
+                (r"/", UserHandler),
+            ]
+            tornado.web.Application.__init__(self, handlers)
+
+
+    class UserHandler(tornado.web.RequestHandler):
+
+        @gen.coroutine
+        def get(self):
+            user = AsyncUser()
+            response = yield (user.save())
+
+            response2 = yield (user.send_email())
+            response3 = yield (user.social_api())
+            self.finish()
+
+    def main():
+        http_server = tornado.httpserver.HTTPServer(Application())
+        PORT = 8001
+        print("serving at port", PORT)
+        http_server.listen(PORT)
+        tornado.ioloop.IOLoop.instance().start()
+
+
+    if __name__ == "__main__":
+        main()
+
+
+
+</pre>
+
+<h3>
+    Apache Benchmark comparision
+</h3>
+
+<h4>
+Synchronous Server
+</h4>
+
+<pre>
+    $ ab -c 12 -n 120  127.0.0.1:8000/
+
+    Server Software:        BaseHTTP/0.6
+    Server Hostname:        127.0.0.1
+    Server Port:            8000
+
+    Document Path:          /
+    Document Length:        0 bytes
+
+    Concurrency Level:      12
+    Time taken for tests:   62.697 seconds
+    Complete requests:      120
+    Failed requests:        0
+    Write errors:           0
+    Total transferred:      10920 bytes
+    HTML transferred:       0 bytes
+    Requests per second:    1.91 [#/sec] (mean)
+    Time per request:       6269.746 [ms] (mean)
+    Time per request:       522.479 [ms] (mean, across all concurrent requests)
+    Transfer rate:          0.17 [Kbytes/sec] received
+
+    Connection Times (ms)
+                  min  mean[+/-sd] median   max
+    Connect:        0   59 396.0      0    3006
+    Processing:   281 3890 9879.3   1971   61132
+    Waiting:      281 3890 9879.3   1970   61131
+    Total:        282 3949 10215.0   1971   62697
+
+</pre>
+
+<h4>
+ASynchronous Server
+</h4>
+
+<pre>
+    $ ab -c 12 -n 120 127.0.0.1:8001/
+
+    Server Software:        TornadoServer/3.1.1
+    Server Hostname:        127.0.0.1
+    Server Port:            8001
+
+    Document Path:          /
+    Document Length:        0 bytes
+
+    Concurrency Level:      12
+    Time taken for tests:   33.895 seconds
+    Complete requests:      120
+    Failed requests:        0
+    Write errors:           0
+    Total transferred:      23280 bytes
+    HTML transferred:       0 bytes
+    Requests per second:    3.54 [#/sec] (mean)
+    Time per request:       3389.531 [ms] (mean)
+    Time per request:       282.461 [ms] (mean, across all concurrent requests)
+    Transfer rate:          0.67 [Kbytes/sec] received
+
+    Connection Times (ms)
+                  min  mean[+/-sd] median   max
+    Connect:        0    0   0.1      0       0
+    Processing:  3185 3371  58.6   3389    3392
+    Waiting:     3185 3371  58.6   3389    3392
+    Total:       3185 3371  58.6   3389    3392
+
+    Percentage of the requests served within a certain time (ms)
+      50%   3389
+      66%   3390
+      75%   3390
+      80%   3390
+      90%   3391
+      95%   3391
+      98%   3391
+      99%   3391
+
+
+</pre>
+
+<h4>
+Results comparisions
+</h4>
+
+
++-------------------+---------------+--------------+
+| Item              | Synchronous   | ASynchronous |
++-------------------+---------------+--------------+
+| Concurrency Level | 12            | 12           |
++-------------------+---------------+--------------+
+| Complete requests | 120           | 120          |
++-------------------+---------------+--------------+
+| Time taken for    | 62.697 second | 33.89 second |
+| tests             |               |              |
++-------------------+---------------+--------------+
+| Requests per      | 1.91          | 3.54         |
+| second            |               |              |
++-------------------+---------------+--------------+
+
+
+
+
+
+<h3>Resources</h3>
+
+<ul>
+<li> Tornado website: <a href="http://www.tornadoweb.org"> http://www.tornadoweb.org </a> </li>
+
+<li> Being truly asynchronous with Tornado: <a href="http://papercruncher.com/2013/01/15/truly-async-with-tornado/"> http://papercruncher.com/2013/01/15/truly-async-with-tornado/ </a> </li>
+</ul>
