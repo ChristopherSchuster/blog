@@ -12,7 +12,7 @@ Asynchronous Programming with Tornado Framework
     Let's think about a web application build with one popular web framework
     (django, flask, ruby on rails, java servlets, etc).
 
-    This application will run as a server and wait for request directly or behind a
+    This application will run as a server waiting for request directly or behind a
     web server like apache or nginx.
 
     Our example application has to do the 4 next task every user request:
@@ -85,7 +85,7 @@ So in total the thread will be inactive and BLOCKED = 20ms + 60ms + 200ms =
 <h5>The Server</h5>
 
 <p>
-A simple Http built with standard python library
+A simple Http server built with standard python library
 http://docs.python.org/3/library/http.server.html, any conventional
 python web framework (django, flask, bottle, pylons, etc) follow this
 philosophy: </p>

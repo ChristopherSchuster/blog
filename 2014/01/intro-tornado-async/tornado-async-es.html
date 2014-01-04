@@ -1,68 +1,70 @@
 Programaci&oacute;n as&iacute;ncrona con python y Tornado Framework
 <p>
-    In order to understand Asynchronous programming is important understand how
-    synchronous programming works and why it is a problem on high traffic websites.
+    Para poder entender como funciona la programaci&oacute;n as&iacute;ncrona es
+    importante saber como funciona la programaci&on convencional y porque es un
+    probela en aplicaciones web de alto trafico.
 </p>
 
 
-<h3>A Simple Web Application Example</h3>
+<h3>Una sencilla aplicaci&oacute;n de ejemplo:</h3>
 
 
 <p>
-    Let's think about a web application build with one popular web framework
+    Imaginemos una aplicaci&oacute;n construida con un framework popular
     (django, flask, ruby on rails, java servlets, etc).
 
-    This application will run as a server and wait for request directly or behind a
-    web server like apache or nginx.
+    Esta aplicaci&oacute;n funciona como un servidor directamente o detras de otro
+    servidor como apache o nginx.
 
-    Our example application has to do the 4 next task every user request:
+    Nuestra aplicaci&oacute; debe ejecutar los siguientes 4 pasos cada
+    que un usuario hace una petici&oacute;n:
 </p>
 
 <ol>
-    <li> Create user in database</li>
+    <li> Crear usuario in base de datos.</li>
 
-    <li> Send confirmation email to user.</li>
+    <li> Enviar email de confirmaci&oacute; a usuario.</li>
 
-    <li> Share social profile on social networks using external API providers.</li>
+    <li> Compartir perfil social en redes sociales llamando apis externas.</li>
 
-    <li> Send response to the user</li>
+    <li>Enviar respuesta al usuario</li>
 
 </ol>
 
 
-<h3>Synchronous Aproach</h3>
+<h3>Ejemplo S&iacute;ncrono</h3>
 
 <p>
-Every time that a client makes a request to a  Synchronous Web application, a
-thread takes care of this request and start perform the task sequentially, so
-let's suppose that connect, send information and wait response from database in
-order to perform the first step in the request takes 20 ms. in that time the
-thread can not do any other task because is waiting for the database response,
-so this thread is BLOCKED.
+Cada vez que un usuario hace una petici&oacute;n a el programa empieza
+a ejecutar de forma secuencial las instrucciones, asi que si el proceso de 
+conectar a la base de datos para crear el registro y esperar el resultado 
+demora 20 ms, el hilo principal no puede hacer nada m&acute;s mientras espera
+la respuesta del servidor de BD. Esto quiere decir que el hilo esta
+BLOQUEADO.
 </p>
 
 <p>
-After the database response the thread can continue its work, so now is time to
-send the email, the connection to the smpt server and send the email and get the
-response can take 60 ms, in this time the thread will be blocked again, and then
-same thing happen when send information to the socials API but this time the
-thread will have to wait 200 ms.
-
-So in total the thread will be inactive and BLOCKED = 20ms + 60ms + 200ms =
+Luego de obtener la respuesta del servidor de Base de Datos el hilo principal
+sigue su ejecuci&oacute;n, es tiempo ahora de enviar el email. Establecer la
+conexi&oacute;n al servidor de correo, enviar el email y esperar la respuesta
+toma 60 ms en los que el hilo esta de nuevo bloqueado. De igual forma al 
+enviar la informaci&oacute;n al API social estar&aacute; el hilo bloqueado
+200 ms. 
+En total el hilo esta inactivo y BLOQUEADO = 20ms + 60ms + 200ms =
 280ms
 </p>
 
-<p> The next image shows the workflow for this approach</p>
+<p>El siguiente diagrama muestra el flujo de esta soluci&oacute;n</p>
 
 <img src="https://raw.github.com/maigfrga/blog/master/2014/01/intro-tornado-async/sync_example.png" class="img-polaroid">
 
 
 
-<h4>Code example</h4>
+<h4>Ejemplo</h4>
 
-<h5> The model</h5>
+<h5> Modelo</h5>
 
-<p>A simple user class that emulates the delay:</p>
+<p>Una simple clase que emula el delay:</p>
 
 
 <pre>
@@ -82,13 +84,13 @@ So in total the thread will be inactive and BLOCKED = 20ms + 60ms + 200ms =
 </pre>
 
 
-<h5>The Server</h5>
+<h5>El Servidor</h5>
 
 <p>
-A simple Http built with standard python library
-http://docs.python.org/3/library/http.server.html, any conventional
-python web framework (django, flask, bottle, pylons, etc) follow this
-philosophy: </p>
+In simple servidor Http construido con la libreria standar de python
+http://docs.python.org/3/library/http.server.html, cualquier framework
+web convencional  (django, flask, bottle, pylons, etc)  funciona de forma
+similar: </p>
 
 <pre>
     from models import User
@@ -127,62 +129,63 @@ philosophy: </p>
 
 
 
-<h3> ASynchronous Approach</h3>
+<h3>Ejemplo As&iacute;ncrono</h3>
 
 <p>
-Every time that a request is made, the thread does not execute the tasks,
-instead of this defer the execution of all the task needed to be done to another moment.
+Cada vez que una petici&oacute;n es recibida, el hilo principal NO ejecuta
+las tareas necesarias, en su lugar aplaza la ejecuci&oacute;n del codigo
+para otro momento. 
 
-For me has been really hard try to understand what this means, so i'll try to
-explain with my own words that maybe doesn't fit the exact tecnhical definition:
+Para mi ha sido dif&iacute;cil entender este concepto, voy a tratar de 
+explicarlo con mis propias palabras que pueden no ser exactamente fieles a la
+definici&oacute;n t&eacute;nica:
 
-The Thread does not execute the tasks required to get the job done, instead
-the thread makes a list of these tasks and pass the control to another component
-who actually perform the task and will report to the main thread when the
-process is finish in order to send the response to the client.
+El hilo principal no ejecuta las tareas requeridas para realizar el trabajo, en su lugar el hilo hace un listado de las tareas requeridas y pasa este 
+listado a otro componenete que es el responsable de ejecutar estas tareas, liberando el hilo princpal y evitando un bloqueo de este que no tiene nada por que esperar. El hilo princpial sigue procesando peticones mientras que el
+otro componente ejecuta las tareas requeridas, una vez finaliza, devuelve el
+control al hilo principal a traves de una llamada callback
 
-The big difference in this approach is the main thread is no blocked waiting for
-database, stmp and API responses, so is possible receive another request from
-another clients in the meantime.
+La gran difirencia en el c&oacute;digo  as&iacute;ncrono es que el hilo 
+princpial no se bloquea esperando el resultado de los servidores de base
+de datos, smtp y el API social, por lo que puede usar este tiempo para
+procesar nuevas peticiones.
 
-That can make a real big performance difference on heavy load web applications,
-that is not black magic, on both approachs some component have to wait 280ms
-between database access, smtp and API social connections. The big difference is
-that in synchronous approach the main thread will be blocked waiting for the
-response of every component, this not happen on the asynchronous approach
-because the main thread transfer the responsability of these task to another
-component and can continue processing client request in meantime. When the task
-finish the main thread is notified in order to finish the request and delivery
-response to the client.
+Esto puede marcar una real diferencia de performace en aplicaciones web de
+alto trafico.
 
-The biggest challenge when we want write asynchronous code is change our mental
-model and understand that the code is not executed by the main thread, instead 
-of this, the main thread transfer the control flow of this execution to another
-component that will execute the code in the future and will report the result to
-a callback function that must be defined. After the main thread delegates the
-responsability of this execution is free to continue the normal execution and
-doesn't wait for the response.
+Es importante destacar que esto no es magia negra, en ambos ejemplos, algun
+componente estara bloqueado 280ms entre acceso a base de datos, servidor de
+correo y API social.
+
+El mayor reto cuando se escribe c&oacute;digo as&iacute;ncrono es cambiar
+nuestro modelo mental y entender que el c&oacute;digo no se ejecuta 
+inmediatamente, en su lugar la ejecuci&oacute;n es aplazada a un momento 
+posterior donde el responsable de la tarea es otro componente diferente del 
+hilo principal.
+
+
 </p>
-<p> The next image shows the workflow for this approach</p>
+<p>La siguiente imagen muestra el flujo de este ejemplo</p>
 
 <img src="https://raw.github.com/maigfrga/blog/master/2014/01/intro-tornado-async/async_example.png" class="img-polaroid">
-<h4> Futures python module</h4>
+
+
+<h4>Modulo Futures python </h4>
 
 <p>
-The concurrent.futures module provides a high-level interface for 
-asynchronously executing callables. This pattern was introduced in python 3.2 
-but is avaiable for older releases via pip, the official documentation for this
-module in this link:
+El modulo concurrent.futures tiene una interfaz de alto nivel para ejecutar
+codigo as&iacute;ncrono, este patr&oacute;n fue introducido en python 3.2 y
+disponible para versiones inferiores via pip. La documentaci&oacute;n 
+oficial puede encontrarse en este enlace: 
 http://docs.python.org/3.4/library/concurrent.futures.html
 </p>
 
-<h4>Code Example using Tornado Framework</h4>
+<h4>Ejemplo de c&oacute;digo usando Tornado Framework</h4>
 
 <h5>The Model </h5>
 
 <p>
-We use the future feature http://www.tornadoweb.org/en/stable/concurrent.html
-in order to make our code asynchronous: </p>
+Usamos la librer&iacute;a future de tornado http://www.tornadoweb.org/en/stable/concurrent.html para hacer nuestro c&oacute;digo as&iacute;ncrono: </p>
 
 <pre>
     import time
@@ -211,16 +214,20 @@ in order to make our code asynchronous: </p>
 </pre>
 
 <p>
-The @return_future decorator make a function that returns via callback return a Future.
+El decorador @return_future convierte la funci&oacute;n decorada en 
+as&iacute;ncrona, es importante llamar a la funci&oacute;n callback como 
+ultima l&iacute;nea de la funci&oacute;n de esta forma se retornara un objeto
+de tipo Future.
 
-The wrapped function should take a callback keyword argument and invoke it with one argument when it has finished. To signal failure, the function can simply raise an exception (which will be captured by the StackContext and passed along to the Future). 
 </p>
 
-<h5> The Server </h5>
+<h5>El servidor </h5>
 
 <p>
-tornado.gen is a generator-based interface to make it easier to work in an 
-asynchronous environment. The documentation can be found at this link:
+
+tornado.gen  es una interfaz que retorna generadores y hace m&acute;s facil
+trabajar con codigo as&iacute;ncrono. La documentaci&oacute;n completa
+puede encontrarse en este enlace:
 <a href="http://www.tornadoweb.org/en/stable/gen.html">http://www.tornadoweb.org/en/stable/gen.html </a>
 </p>
 
@@ -270,11 +277,11 @@ asynchronous environment. The documentation can be found at this link:
 </pre>
 
 <h3>
-    Apache Benchmark comparision
+    Comparaci&oacute;n Apache Benchmark
 </h3>
 
 <h4>
-Synchronous Server
+Servidor S&iacute;ncrono
 </h4>
 
 <pre>
@@ -309,7 +316,7 @@ Synchronous Server
 </pre>
 
 <h4>
-ASynchronous Server
+Servidor AS&iacute;ncrono
 </h4>
 
 <pre>
@@ -355,7 +362,7 @@ ASynchronous Server
 </pre>
 
 <h4>
-Results comparisions
+Resultados
 </h4>
 
 
@@ -377,7 +384,7 @@ Results comparisions
 
 
 
-<h3>Resources</h3>
+<h3>Recursos</h3>
 
 <ul>
 <li> Tornado website: <a href="http://www.tornadoweb.org"> http://www.tornadoweb.org </a> </li>
