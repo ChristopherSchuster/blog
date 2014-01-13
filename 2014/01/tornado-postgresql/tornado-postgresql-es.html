@@ -1,19 +1,18 @@
-Asynchronous Database code with Tornado and Postgresql
-
+Acceso a Base de datos as&iacute;ncrono usando Tornado y Postgresql
 <p>
-In order to write asynchronous code is not enough use a framework like
-Tornado, all libraries that we use in order to talk with databases, web
-clients, etc, must support asynchronous style too. 
+Para poder escribir  as&iacute;ncrono no es suficiente utilizar un framework
+como Tornado, todas las librer&iacute;as que usamos para comunicarnos con bases
+de datos, clientes, etc, deben ser as&iacute;ncronas igualmente . 
 <a href="https://github.com/FSX/momoko">momoko</a>
- is a wrapper for Psycopg2 that allows use 
-postgresql with tornado asynchronously. Full documentation can 
-be found at  <a href="http://momoko.61924.nl/en/latest/"> http://momoko.61924.nl/en/latest/ </a>
+es un wrapper para el adaptador para postgresql Psycopg2 que permite comunicarse con
+postgresql y tornado de forma as&iacute;ncrona. Documentaci&oacute;n oficial puede ser
+encontrada en  <a href="http://momoko.61924.nl/en/latest/"> http://momoko.61924.nl/en/latest/ </a>
 </p>
 
-<h3>Initializing Database connection</h3>
+<h3>Estableciendo  la conexi&oacute;n a la base de datos</h3>
 
 <p>
-We can use momoko.Pool function to get a postgresql asynchronous connection
+Podemos usar la funci&oacute;n momoko.Pool para establecer una conexi&oacute;n as&iacute;ncrona
 <a href="http://momoko.61924.nl/en/latest/api.html#connections"> http://momoko.61924.nl/en/latest/api.html#connections </a>
 </p>
 
@@ -59,7 +58,7 @@ We can use momoko.Pool function to get a postgresql asynchronous connection
 </pre>
 
 
-<h3> A simple DAO class</h3>
+<h3> Una simple clase DAO</h3>
 
 <pre>
 
@@ -178,9 +177,8 @@ We can use momoko.Pool function to get a postgresql asynchronous connection
 Table RequestHandler
 </h3>
 
-<p>
-This handler has two methods: one for create the table and another to
-delete it</p>
+<p>Este Hanlder tiene 2 metodos: uno para crear la tabla y otro para borrarla
+</p>
 
 
 <pre>
@@ -212,7 +210,7 @@ User RequestHandler
 </h3>
 
 <p>
-Handles simple CRUD operations using 4 HTTP methods (GET, PUT, POST, DELETE):</p>
+Controla operaciones CRUD usando 4 metodos HTTP  (GET, PUT, POST, DELETE):</p>
 
 
 <pre>
@@ -264,12 +262,12 @@ Handles simple CRUD operations using 4 HTTP methods (GET, PUT, POST, DELETE):</p
 
 
 <h3>
-Using the Application
+Usando la applicaci&oacute;n
 </h3>
 
 
 <h4>
-Creating the table
+Creando la tabla
 </h4>
 
 <pre>
@@ -279,7 +277,7 @@ Creating the table
 
 
 <h4>
-Creating random users
+Creando usuarios aleatorios
 </h4>
 
 
@@ -289,7 +287,7 @@ Creating random users
 
 
 <h4>
-Get user list
+Obteniendo la lista de usuarios
 </h4>
 
 
@@ -302,7 +300,7 @@ Get user list
 
 
 <h4>
-Get user by id
+Obtener usuario por  id
 </h4>
 
 <pre>
@@ -313,7 +311,7 @@ Get user by id
 
 
 <h4>
-Update user
+Actualizando usuario
 </h4>
 
 <pre>
@@ -325,7 +323,7 @@ Update user
 
 
 <h4>
-Delete user
+Borrando usuario
 </h4>
 
 
@@ -337,7 +335,7 @@ Delete user
 
 
 <h4>
-Delete table
+Borrando la tabla
 </h4>
 
 <pre>
