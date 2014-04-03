@@ -1,0 +1,404 @@
+OpenStack Introduction for Ubuntu Part I
+
+<p>
+    <a href="http://www.openstack.org/">OpenStack</a>  is an open source cloud-computing project for public and private clouds managed by the OpenStack Foundation, the mail goal of this project
+    is provide an Infrastructure as a Service (IaaS) plataform. This post series are an introduction about how can be the platafform installed on Ubuntu 12.04 (LTS).
+    <a href="http://docs.openstack.org/havana/install-guide/install/apt/content/">At this link a complete installation guide can be found</a>
+</p>
+
+<h2>OpenStack Services</h2>
+<ul>
+    <li>OpenStack Dashboard (http://www.openstack.org/software/openstack-dashboard/): Graphical interface to access, provision and automate cloud-based resources.</li>
+    <li>OpenStack Compute  (http://www.openstack.org/software/openstack-compute/): Cloud operating system that enables enterprises and service providers to offer 
+        on-demand computing resources, by provisioning and managing large networks of virtual machines.  </li>
+    <li>OpenStack Networking  (http://www.openstack.org/software/openstack-networking/): Pluggable, scalable and API-driven system for managing networks and IP addresses.</li>
+    <li>OpenStack Storage (http://www.openstack.org/software/openstack-storage/): Object and Block storage for use with servers and applications.</li>
+    <li>Identity Service (http://www.openstack.org/software/openstack-shared-services/): Central directory of users mapped to the OpenStack services they can access.</li>
+    <li>Image Service (http://www.openstack.org/software/openstack-shared-services/): Provides discovery, registration and delivery services for disk and server images.</li>
+    <li>Telemetry Service  (http://www.openstack.org/software/openstack-shared-services/): Aggregates usage and performance data across the services deployed in an OpenStack cloud.</li>
+    <li>Orchestration Service  (http://www.openstack.org/software/openstack-shared-services/): Template-driven engine that allows application developers to describe and automate the deployment of infrastructure.</li>
+</ul>
+
+<h2>Basic architecture with OpenStack Networking (Neutron)</h2>
+<ul>
+    <li>The controller node runs the Identity Service, Image Service, dashboard, and management portions of Compute and Networking.
+        It also contains the associated API services, MySQL databases, and messaging system.</li>
+    <li> The network node runs the Networking plug-in agent and several layer 3 agents that provision tenant networks and provide services to them,
+         including routing, NAT, and DHCP. It also handles external (internet) connectivity for tenant virtual machines.
+    </li>
+    <li>The compute node runs the hypervisor portion of Compute, which operates tenant virtual machines. By default, Compute uses KVM as the hypervisor. 
+        The compute node also runs the Networking plug-in agent, which operates tenant networks and implements security groups.
+    </li>
+</ul>
+
+<h3>Networking </h3>
+
+<h4>Configuring Internal network</h4>
+<p>Conventional configuration requires two network interfaces on every machine, one for internet communication and another for local network communication, for
+simplicity we will assume that these interfaces are eth0 and eth1. An example of /etc/network/interfaces  configuration file for controller node can be:
+</p>
+
+<pre>
+# Internal Network
+    auto eth0
+    iface eth0 inet static
+    address 192.168.0.10
+    netmask 255.255.255.0
+# External Network
+    auto eth1
+    iface eth1 inet static
+    address 10.0.0.10
+    netmask 255.255.255.0
+</pre>
+
+<p>Use the <code>hostname</code> command to set the host name: </p>
+
+<pre>
+   # hostname controller 
+</pre>
+
+<p>To configure this host name to be available when the system reboots, you must specify it in the /etc/hostname file, which contains a single line with the host name.</p>
+
+<p>For a simple example edit hosts file and add all the hostnames, real systems should use a dns or a system like chef to set up this host list</p>
+
+<pre>
+    127.0.0.1       localhost
+    192.168.0.10    controller
+    192.168.0.11    compute1
+</pre>
+
+
+<h4>Network Time Protocol (NTP)</h4>
+<p>
+   To synchronize services across multiple machines, you must install NTP on every node.
+   After install edit /etc/ntp.conf and change the server directive to use the controller node as internet time source. 
+</p>
+<pre>
+   # apt-get install ntp 
+</pre>
+
+<h3>Passwords</h3>
+
+<p> Every service require a password. You can generate random passwords using <code>openssl rand -hex 10</code> command.
+The complete list of passwords you need to define in this guide are:  
+</p>
+
+<table id="d6e808" rules="all"><caption>Passwords</caption><thead><tr>
+          <th>Password name</th>
+          <th>Description</th>
+        </tr></thead><tbody><tr>
+          <td>Database password (no variable used)</td>
+          <td>Root password for the database</td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>RABBIT_PASS</code></em></code></td>
+          <td>Password of user guest of RabbitMQ</td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>KEYSTONE_DBPASS</code></em></code></td>
+          <td>Database password of Identity service</td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>ADMIN_PASS</code></em></code></td>
+          <td>Password of user <code class="literal">admin</code></td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>GLANCE_DBPASS</code></em></code></td>
+          <td>Database password for Image Service</td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>GLANCE_PASS</code></em></code></td>
+          <td>Password of Image Service user <code class="literal">glance</code></td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>NOVA_DBPASS</code></em></code></td>
+          <td>Database password for Compute service</td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>NOVA_PASS</code></em></code></td>
+          <td>Password of Compute service user <code class="literal">nova</code></td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>DASH_DBPASS</code></em></code></td>
+          <td>Database password for the dashboard</td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>CINDER_DBPASS</code></em></code></td>
+          <td>Database password for the Block Storage Service</td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>CINDER_PASS</code></em></code></td>
+          <td>Password of Block Storage Service user <code class="literal">cinder</code></td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>NEUTRON_DBPASS</code></em></code></td>
+          <td>Database password for the Networking service</td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>NEUTRON_PASS</code></em></code></td>
+          <td>Password of Networking service user <code class="literal">neutron</code></td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>HEAT_DBPASS</code></em></code></td>
+          <td>Database password for the Orchestration service</td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>HEAT_PASS</code></em></code></td>
+          <td>Password of Orchestration service user <code class="literal">heat</code></td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>CEILOMETER_DBPASS</code></em></code></td>
+          <td>Database password for the Telemetry service</td>
+        </tr><tr>
+          <td><code class="literal"><em class="replaceable"><code>CEILOMETER_PASS</code></em></code></td>
+          <td>Password of Telemetry service user <code class="literal">ceilometer</code></td>
+        </tr></tbody>
+ </table>
+
+
+<h3>Mysql Install</h3>
+<p> MysqlDb is required to store information Open Stack Information
+</p>
+<h4>Mysql Controller Setup</h4>
+<pre>
+   # apt-get install python-mysqldb mysql-server 
+</pre>
+
+<h4>Mysql Node Setup</h4>
+<pre>
+   apt-get install python-mysqldb 
+</pre>
+
+<h3>Open Stack Packages</h3>
+
+<p>
+ The  <a href="https://wiki.ubuntu.com/ServerTeam/CloudArchive">Ubuntu Cloud Archive</a> is a special repository that allows you to install newer releases of OpenStack on the stable supported version of Ubuntu.
+
+</p>
+
+<pre>
+   # apt-get install python-software-properties
+   # add-apt-repository cloud-archive:havana 
+   # apt-get update && apt-get dist-upgrade
+   # reboot
+</pre>
+
+<h3>Messaging server </h3> 
+<p>
+Install RabbitMQ and change its default password.
+</p>
+
+<pre>
+   # apt-get install rabbitmq-server 
+   # rabbitmqctl change_password guest RABBIT_PASS
+</pre>
+
+<h3>Configure the Identity Service</h3>
+
+<h4> Identity Service concepts </h4>
+
+<p>The Identity Service performs the following functions:</p>
+<ul>
+<li>
+    User management: Tracks users and their permissions.
+</li>
+<li>
+    Service catalog: Provides a catalog of available services with their API endpoints.
+</li>
+</ul>
+
+
+<h4> Install the Identity Service </h4>
+
+<p>Install the OpenStack Identity Service on the controller node:</p>
+<pre>
+   # apt-get install keystone 
+</pre>
+
+<p>
+Edit /etc/keystone/keystone.conf and change the [sql] section.
+</p>
+
+<pre>
+    [sql]
+    # The SQLAlchemy connection string used to connect to the database
+    connection = mysql://keystone:KEYSTONE_DBPASS@controller/keystone
+</pre>
+
+<p>
+    Create a keystone database user: 
+</p>
+<pre>
+  # mysql -u root -p
+    mysql> CREATE DATABASE keystone;
+    mysql> GRANT ALL PRIVILEGES ON keystone.* TO 'keystone'@'localhost' \
+    IDENTIFIED BY 'KEYSTONE_DBPASS';
+    mysql> GRANT ALL PRIVILEGES ON keystone.* TO 'keystone'@'%' \
+    IDENTIFIED BY 'KEYSTONE_DBPASS'; 
+</pre>
+
+<p>Create the database tables for the Identity Service:
+</p>
+
+<pre>
+    # keystone-manage db_sync
+</pre>
+
+<p>
+    Define an authorization token to use as a shared secret between the Identity Service and other OpenStack services. Use openssl to generate a random token and store it in the configuration file:
+</p>
+
+<pre>
+   # openssl rand -hex 10 
+</pre>
+
+<p>
+   Edit /etc/keystone/keystone.conf and change the [DEFAULT] section, replacing ADMIN_TOKEN with the results of the command 
+</p>
+
+<pre>
+   [DEFAULT]
+    # A "shared secret" between keystone and other openstack services
+    admin_token = ADMIN_TOKEN 
+</pre>
+<p> Restart <code>#service keystone restart</code> </p>
+
+<h4>  Define users, tenants, and roles </h4>
+
+<p> We don't have any users yet for the identity service but we can connect it usign the admin access token, in order to that, we need export
+next environment variables:
+</p>
+
+<pre>
+   # export OS_SERVICE_TOKEN=ADMIN_TOKEN
+   # export OS_SERVICE_ENDPOINT=http://controller:35357/v2.0 
+</pre>
+
+<p>Create a tenant for an administrative user and a tenant for other OpenStack services to use. </p>
+
+<pre>
+    # keystone tenant-create --name=admin --description="Admin Tenant"
+    # keystone tenant-create --name=service --description="Service Tenant"
+</pre>
+
+<p>Create an administrative user called admin. Choose a password for the admin user and specify an email address for the account.</p>
+
+
+<pre>
+   # keystone user-create --name=admin --pass=ADMIN_PASS --email=admin@example.com 
+</pre>
+
+<p> Create a role for administrative tasks called admin.
+</p>
+
+<pre>
+    # keystone role-create --name=admin
+</pre>
+
+<p>
+Add roles to users. Users always log in with a tenant, and roles are assigned to users within tenants. Add the admin role to the admin user when logging in with the admin tenant.
+</p>
+
+<pre>
+   # keystone user-role-add --user=admin --tenant=admin --role=admin 
+</pre>
+
+
+<h4>Define services and API endpoints </h4>
+
+<p>
+ You must register each service in your OpenStack installation using the next commands:
+</p>
+
+<ul>
+<li>    keystone service-create. Describes the service. </li>
+
+<li>    keystone endpoint-create. Associates API endpoints with the service. </li>
+</ul>
+
+<p> You must also register the Identity Service itself. Use the OS_SERVICE_TOKEN environment variable, as set previously, for authentication.
+</p>
+
+<h5>Create a service entry for the Identity Service</h5>
+
+<pre>
+   # keystone service-create --name=keystone --type=identity --description="Keystone Identity Service"
+
+    +-------------+----------------------------------+
+    |   Property  |              Value               |
+    +-------------+----------------------------------+
+    | description |    Keystone Identity Service     |
+    |      id     | 19072b6631ec4c0b9d3f93a8b89efd41 |
+    |     name    |             keystone             |
+    |     type    |             identity             |
+    +-------------+----------------------------------+
+
+</pre>
+
+
+<h5>Specify an API endpoint for the Identity Service</h5>
+
+<p>
+Use the returned service ID. When you specify an endpoint, you provide URLs for the public API, internal API, and admin API.
+</p>
+
+<pre>
+   # keystone endpoint-create \
+  --service-id=19072b6631ec4c0b9d3f93a8b89efd41\
+  --publicurl=http://controller:5000/v2.0 \
+  --internalurl=http://controller:5000/v2.0 \
+  --adminurl=http://controller:35357/v2.0
+
+
+    +-------------+----------------------------------+
+    |   Property  |              Value               |
+    +-------------+----------------------------------+
+    |   adminurl  |   http://controller:35357/v2.0   |
+    |      id     | dcff14339da049fbb42031f4b1490250 |
+    | internalurl |   http://controller:5000/v2.0    |
+    |  publicurl  |   http://controller:5000/v2.0    |
+    |    region   |            regionOne             |
+    |  service_id | 19072b6631ec4c0b9d3f93a8b89efd41 |
+    +-------------+----------------------------------+
+</pre>
+
+<p>  <strong> Note: As you add other services to your OpenStack installation, call these commands to register the services with the Identity Service</strong> </p>
+
+<h4> Verify the Identity Service installation  </h4>
+
+<p>
+Unset the OS_SERVICE_TOKEN and OS_SERVICE_ENDPOINT environment variables
+</p>
+
+<pre>
+    $ unset OS_SERVICE_TOKEN OS_SERVICE_ENDPOINT 
+</pre>
+
+<p>
+   You can now use regular username-based authentication. Request an authentication token using the admin user and the password you chose during the earlier administrative user-creation step.
+  You should receive a token in response, paired with your user ID. This verifies that keystone is running on the expected endpoint, and that your user account is established with the expected credentials.  
+</p>
+
+<pre>
+   $ keystone --os-username=admin --os-password=ADMIN_PASS \
+  --os-auth-url=http://controller:35357/v2.0 token-get 
+</pre>
+
+<p>Verify that authorization is behaving as expected by requesting authorization on a tenant. 
+</p>
+
+<pre>
+  $ keystone --os-username=admin --os-password=ADMIN_PASS \
+  --os-tenant-name=admin --os-auth-url=http://controller:35357/v2.0 token-get 
+</pre>
+
+<p>
+    You can also set your --os-* variables in your environment to simplify command-line usage
+</p>
+
+<pre>
+    export OS_USERNAME=admin
+    export OS_PASSWORD=ADMIN_PASS
+    export OS_TENANT_NAME=admin
+    export OS_AUTH_URL=http://controller:35357/v2.0 
+</pre>
+
+<p>Verify if the variables has been setted correctly, using  <code>keystone</code> command without --os option
+</p>
+
+<pre>
+   $ keystone token-get 
+</pre>
+
+<p>
+    Verify that your admin account has authorization to perform administrative commands.
+</p>
+
+<pre>
+   $ keystone user-list 
+</pre>
