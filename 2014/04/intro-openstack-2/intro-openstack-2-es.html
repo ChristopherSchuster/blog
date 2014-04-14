@@ -1,0 +1,512 @@
+Intoducci&oacute;n OpenStack para Ubuntu Parte II
+<p>Este es el segundo Post de introducci&oacute;n a Open Stack. <a href="http://www.maigfrga.ntweb.co/openstack-introduction-ubuntu-part-i/">La primer parte de esta serie</a>  es sobre conceptos generales, instalaci&oacute y
+configuraci&oacute;n de Identity service installation, esta segunda parte continua con Image y Compute Services <a href="http://docs.openstack.org/havana/install-guide/install/apt/content/">En este enlace tutorial completo de instalaci&oacute;n </a>
+</p>
+
+
+<h3>Configurando Image Service</h3>
+
+<p>
+   El servicio OpenStack Image  permite a los usuarios descubrir, registrar y obtener imagenes 
+   de m&aacute;quinas virtuales a trav&eacute;s de una API REST. 
+</p>
+
+<h4>Image Service overview</h4>
+
+<ul>
+    <li>
+        glance-api. Acepta llamadas API para descubir, almacenar y obtener imagenes.
+    </li>
+
+    <li>
+    glance-registry. Almacena, procesa y obtiene metada sobre las imagenes.
+   </li>
+    <li>
+    Base de datos. Almacena metadata de las imagenes.
+    </li>
+    <li>
+    Repositorio de almacenamiento para los archivos de imagenes, es posible usar Object Storage Service
+    como repositorio de imagenes, adicionalmente, sistema de arhivos, dispositivos RADOS, Amazon S3 son soportados.
+    </li>
+
+</ul>
+
+<h4> Instalando  Image Service </h4>
+
+<p>
+    OpenStack Image Service actua como un registro de imagenes virtuales en disco, usuarios pueden
+    agregar nuevas imagenes, tomar snapshot de una imagen para un servidor, tomar snapshots para back up
+    y como plantilla para lanzar nuevos servidores.
+</p>
+
+
+<h5> Instalar Image Service en el nodo controller</h5>
+
+<pre>
+   # apt-get install glance python-glanceclient 
+</pre>
+
+<p>
+   Editar /etc/glance/glance-api.conf y /etc/glance/glance-registry.conf cambiar la secci&oacute;n [DEFAULT] 
+   para configurar el acceso a base de datos: 
+</p>
+
+<pre>
+    ...
+    [DEFAULT]
+    ...
+    # SQLAlchemy connection string for the reference implementation
+    # registry server. Any valid SQLAlchemy connection string is fine.
+    # See: http://www.sqlalchemy.org/docs/05/reference/sqlalchemy/connections.html#sqlalchemy.create_engine
+    sql_connection = mysql://glance:GLANCE_DBPASS@controller/glance
+    ...
+</pre>
+
+<p><strong>Nota:</strong> Es necesario crear una nueva base de datos y un usuario con acceso a esta antes de
+ejecutar el comando para crear las tablas requeridas por el servicio.</p>
+
+<pre>
+   # glance-manage db_sync 
+</pre>
+
+<p>
+Crear un usuario glance que pueda usar Image Service con Identity Service. 
+</p>
+
+<pre>
+    # keystone user-create --name=glance --pass=GLANCE_PASS --email=glance@example.com
+
+    +----------+----------------------------------+
+    | Property |              Value               |
+    +----------+----------------------------------+
+    |  email   |        glance@example.com        |
+    | enabled  |               True               |
+    |    id    | 3c6813f8f5c84379adfc23132562efce |
+    |   name   |              glance              |
+    +----------+----------------------------------+
+
+   # keystone user-role-add --user=glance --tenant=service --role=admin 
+</pre>
+
+<p> Configurar Image Service para user Identity Service para autenticaci&oacute;n. 
+    Editar  /etc/glance/glance-api.conf y /etc/glance/glance-registry.conf. 
+    Reemplazar GLANCE_PASS con la contrase&ntilde;a seleccionada para el usuario glance en Identity Service.
+
+    Agregar los siguientes valores en la secci&oacute;n [keystone_authtoken] :
+</p>
+
+<pre>
+    [keystone_authtoken]
+    ...
+    auth_uri = http://controller:5000
+    auth_host = controller
+    auth_port = 35357
+    auth_protocol = http
+    admin_tenant_name = service
+    admin_user = glance
+    admin_password = GLANCE_PASS
+</pre>
+
+<p>
+Agregar los siguientes valores en la secci&oacute;n [paste_deploy]:
+</p>
+
+<pre>
+   flavor = keystone 
+</pre>
+
+<p>
+    Agregar credenciales de acceso en /etc/glance/glance-api-paste.ini y /etc/glance/glance-registry-paste.ini .
+    Editar cada archivo y definir las siguientes opciones en la secci&oacute;n [filter:authtoken] .
+</p>
+
+<pre>
+   [filter:authtoken]
+    paste.filter_factory=keystoneclient.middleware.auth_token:filter_factory
+    auth_host=controller
+    admin_user=glance
+    admin_tenant_name=service
+    admin_password=GLANCE_PASS
+</pre>
+
+<p>
+   Registrar el servicio y crear el  endpoint: 
+</p>
+
+<pre>
+   # keystone service-create --name=glance --type=image --description="Glance Image Service" 
+
+    +-------------+----------------------------------+
+    |   Property  |              Value               |
+    +-------------+----------------------------------+
+    | description |       Glance Image Service       |
+    |      id     | d0c6e90350f1454596ed2200421a044b |
+    |     name    |              glance              |
+    |     type    |              image               |
+    +-------------+----------------------------------+
+
+</pre>
+
+<p>
+Usar el id retornado para crear el endpoint:
+</p>
+
+<pre>
+   # keystone endpoint-create --service-id=the_service_id_above \
+     --publicurl=http://controller:9292 --internalurl=http://controller:9292 \
+    --adminurl=http://controller:9292 
+
+    +-------------+----------------------------------+
+    |   Property  |              Value               |
+    +-------------+----------------------------------+
+    |   adminurl  |      http://controller:9292      |
+    |      id     | 0a4e70031d4d4840a4c888053b221e1d |
+    | internalurl |      http://controller:9292      |
+    |  publicurl  |      http://controller:9292      |
+    |    region   |            regionOne             |
+    |  service_id | d0c6e90350f1454596ed2200421a044b |
+    +-------------+----------------------------------+
+
+</pre>
+
+<p>
+Reiniciar el servicio glance.
+</p>
+
+<pre>
+   # service glance-registry restart
+   # service glance-api restart 
+</pre>
+
+
+<h4>
+ Verificar instalaci&oacute;n del Image Service
+</h4>
+
+<p>
+Necesitamos bajar al menos una imagen compatible con Open Stack para probar el servicio. Para este test
+usaremos la imagen de prueba <a href="http://download.cirros-cloud.net/"  > CirrOS</a>  .
+<a href="http://docs.openstack.org/image-guide/content/index.html"> Mas informaci&oacute;n a cerca de 
+de crear y descargar imagenes en este enlace. </a>
+</p>
+
+<pre>
+    $ mkdir images
+    $ cd images/
+    $ wget http://cdn.download.cirros-cloud.net/0.3.1/cirros-0.3.1-x86_64-disk.img 
+</pre>
+
+<p>
+   Para subir la imagen al Image Service son necesarios los siguientes parametros:
+</p>
+
+<ul>
+    <li>
+        --name: Nombre de la imagen.
+    </li>
+    <li>
+        --disk-format: define el formato del archvivo, formatos validos incluyen
+         qcow2, raw, vhd, vmdk, vdi, iso, aki, ari, and ami. 
+    </li>
+    <li>
+       --container-format: formatos  v&aacute;lidos incluyen: bare, ovf, aki, ari and ami. 
+    </li>
+    <li>
+       --is-public: si es true todos los usuarios pueden usar la imagen, si es false solo administradores.
+    </li>
+</ul>
+
+<pre>
+   # glance image-create --name="CirrOS 0.3.1" --disk-format=qcow2 \
+  --container-format=bare --is-public=true < cirros-0.3.1-x86_64-disk.img 
+
+    +------------------+--------------------------------------+
+    | Property         | Value                                |
+    +------------------+--------------------------------------+
+    | checksum         | d972013792949d0d3ba628fbe8685bce     |
+    | container_format | bare                                 |
+    | created_at       | 2014-04-10T15:43:23.652215           |
+    | deleted          | False                                |
+    | deleted_at       | None                                 |
+    | disk_format      | qcow2                                |
+    | id               | 2c0955c1-3811-451a-927e-4681bf26eca0 |
+    | is_public        | True                                 |
+    | min_disk         | 0                                    |
+    | min_ram          | 0                                    |
+    | name             | CirrOS 0.3.1                         |
+    | owner            | None                                 |
+    | protected        | False                                |
+    | size             | 13147648                             |
+    | status           | active                               |
+    | updated_at       | 2014-04-10T15:43:24.347303           |
+    +------------------+--------------------------------------+
+
+</pre>
+
+<p>Verificar: </p>
+
+<pre>
+# glance image-list
++--------------------------------------+--------------+-------------+------------------+----------+--------+
+| ID                                   | Name         | Disk Format | Container Format | Size     | Status |
++--------------------------------------+--------------+-------------+------------------+----------+--------+
+| 2c0955c1-3811-451a-927e-4681bf26eca0 | CirrOS 0.3.1 | qcow2       | bare             | 13147648 | active |
++--------------------------------------+--------------+-------------+------------------+----------+--------+
+
+</pre>
+
+
+<h3> Configurar Compute services  </h3>
+
+<p> Este servicio controla la fabricaci&oacute;n de compotentes cloud computing fabric, interactua con
+Identity Service para autenticaci&oacute;n,  Image Service para imagenes, y el Dashboard para 
+administraci&oacute;n. Acesso a imagenes es limitado por proyecto y usuario. quotas son limitadas por proyecto.
+</p>
+
+<h4>Componentes de Compute services</h4>
+
+<h5>API</h5>
+
+<ul>
+    <li>nova-api service: Accepta and responde llamadas de usuarios finales .</li>
+    <li>nova-api-metadata service: Accepta peticiones de metadata requests desde instancias.</li>
+</ul>
+
+<h5>Compute core</h5>
+
+<ul>
+    <li>nova-compute process:  worker daemon que crea y termina instancias de maquinas virtuales a trav&eacute;s
+     de las aPI hypervisor.</li>
+
+    <li>nova-scheduler process: toma una petici&oacute;n para una instancia de m&aacute;quina de la cola
+    y determina en cual servidor debe ejecutarse. 
+    </li>
+
+    <li>nova-conductor module: Arbitra interacciones entre nova-compute y la base de datos eliminando la 
+      acceso directo a la base de datos por parte de nova-compute.  
+    </li>
+    
+</ul>
+
+<h5>Networking param M&aacute;quinas Virtuales</h5>
+
+<ul>
+    <li>nova-network worker daemon: Acepta tareas de networking de a cola y ejecuta acciones para manipular la red
+    como pueden ser definir interfaces, cambiar reglas de iptables, etc. 
+    </li>
+
+    <li>nova-dhcpbridge script: Monitoriza alquiler de direcciones IP y almacena la informaci&oacute;n en
+    la base de datos usando la herramienta dnsmasq dhcp-script . 
+    </li>
+
+</ul>
+
+<h5>Interfaz de Consola</h5>
+
+<ul>
+    <li>nova-consoleauth daemon: Autoriza tokens para usuarios que los proxies proveen.
+    </li>
+    <li>nova-novncproxy daemon: Proxy para acceder a instancias a trav&eacute;s de conexiones VNC. Soporta
+        clientes basados en browser.
+    </li>
+    <li>nova-xvpnvncproxy daemon: Proxy para acceder a instancias a trav&eacute;s de conexiones VNC connection.
+        Soporta un cliente java dise&ntilde;ado por OpenStack.
+    </li>
+    <li>nova-cert daemon: Admnistra certificados x509.
+    </li>
+</ul>
+
+<h5>Clientes de consola y otras interfaces</h5>
+
+<ul>
+    <li>nova client: Permite usuarios enviar comandos .  </li>
+    <li>nova-manage client: Permite administradores de la nube enviar comandos .  </li>
+</ul>
+
+<h4>Install Compute controller services</h4>
+
+<p>Instalar Compute packages:</p>
+
+<pre>
+   # apt-get install nova-novncproxy novnc nova-api \
+     nova-ajax-console-proxy nova-cert nova-conductor \
+     nova-consoleauth nova-doc nova-scheduler \
+    python-novaclient 
+</pre>
+
+<p>
+Editar /etc/nova/nova.conf y agregar las siguientes l&iacute;neas en las secciones [database] y [keystone_authtoken]:
+</p>
+
+<pre>
+
+    ...
+    [database]
+    # The SQLAlchemy connection string used to connect to the database
+    connection = mysql://nova:NOVA_DBPASS@controller/nova
+    [keystone_authtoken]
+    auth_host = controller
+    auth_port = 35357
+    auth_protocol = http
+    admin_tenant_name = service
+    admin_user = nova
+    admin_password = NOVA_PASS
+
+</pre>
+
+<p>
+    Configurar Compute Service para usar el broker RabbitMQ definiendo los siguientes valores en la 
+    secci&oacute;n [DEFAULT] en el archivo /etc/nova/nova.conf:
+</p>
+
+<pre>
+    rpc_backend = nova.rpc.impl_kombu
+    rabbit_host = controller
+    rabbit_password = RABBIT_PASS 
+</pre>
+
+<p>Crear tablas de Compute service: </p>
+
+<pre>
+   # nova-manage db sync 
+</pre>
+
+<p>
+Set the my_ip, vncserver_listen, and vncserver_proxyclient_address configuration options to the 
+internal IP address of the controller node:
+
+Edit the /etc/nova/nova.conf file and add these lines to the [DEFAULT] section:
+
+</p>
+
+<pre>
+     ...
+    [DEFAULT]
+    ...
+    my_ip=192.168.0.10
+    vncserver_listen=192.168.0.10
+    vncserver_proxyclient_address=192.168.0.10 
+
+</pre>
+
+<p>
+   Crear un usuario nova el cual sera usado por Compute para autenticarse en  Identity Service. Usar tenant
+   service y darle rol admin al usuario:
+</p>
+
+<pre>
+   # keystone user-create --name=nova --pass=NOVA_PASS --email=nova@example.com
+
+    +----------+----------------------------------+
+    | Property |              Value               |
+    +----------+----------------------------------+
+    |  email   |         nova@example.com         |
+    | enabled  |               True               |
+    |    id    | 64e4c1ff707449a2b470d82d1269a91b |
+    |   name   |               nova               |
+    +----------+----------------------------------+
+
+
+
+   # keystone user-role-add --user=nova --tenant=service --role=admin 
+</pre>
+
+<p>
+Configurar Compute  para usar estas credenciales con el Identity Service corrienod en  controller. 
+
+Editar secci&oacute;n [DEFAULT] en /etc/nova/nova.conf y agregar este valor: 
+</p>
+
+<pre>
+   [DEFAULT]
+    ...
+    auth_strategy=keystone 
+</pre>
+
+<p>
+   Agregar credenciales en /etc/nova/api-paste.ini . Agregar estas opciones en la 
+   secci&oacute;n [filter:authtoken]: 
+</p>
+
+<pre>
+   [filter:authtoken]
+    paste.filter_factory = keystoneclient.middleware.auth_token:filter_factory
+    auth_host = controller
+    auth_port = 35357
+    auth_protocol = http
+    auth_uri = http://controller:5000/v2.0
+    admin_tenant_name = service
+    admin_user = nova
+    admin_password = NOVA_PASS 
+</pre>
+
+<pre>
+   Registar Compute con el Identity Service para que pueda ser encontrado por los servicios OpenStack.
+   Registrar el servicio y definir endpoint:
+</pre>
+
+<pre>
+   # keystone service-create --name=nova --type=compute \
+  --description="Nova Compute service" 
+
+    +-------------+----------------------------------+
+    |   Property  |              Value               |
+    +-------------+----------------------------------+
+    | description |       Nova Compute service       |
+    |      id     | 4835b37554764710b7fbc669ced638c7 |
+    |     name    |               nova               |
+    |     type    |             compute              |
+    +-------------+----------------------------------+
+
+
+</pre>
+
+<p>
+Usar el id retornado para crear el endpoint.
+</p>
+
+<pre>
+   # keystone endpoint-create \
+  --service-id=the_service_id_above \
+  --publicurl=http://controller:8774/v2/%\(tenant_id\)s \
+  --internalurl=http://controller:8774/v2/%\(tenant_id\)s \
+  --adminurl=http://controller:8774/v2/%\(tenant_id\)s 
+
+
+    +-------------+-----------------------------------------+
+    |   Property  |                  Value                  |
+    +-------------+-----------------------------------------+
+    |   adminurl  | http://controller:8774/v2/%(tenant_id)s |
+    |      id     |     d347a210e04945b0b17c7c7ec1f95aca    |
+    | internalurl | http://controller:8774/v2/%(tenant_id)s |
+    |  publicurl  | http://controller:8774/v2/%(tenant_id)s |
+    |    region   |                regionOne                |
+    |  service_id |     4835b37554764710b7fbc669ced638c7    |
+    +-------------+-----------------------------------------+
+
+</pre>
+
+<p> Restart Compute services: 
+</p>
+
+<pre>
+    # service nova-api restart
+    # service nova-cert restart
+    # service nova-consoleauth restart
+    # service nova-scheduler restart
+    # service nova-conductor restart
+    # service nova-novncproxy restart 
+</pre>
+
+<p> Para verficar configuraci&oacute;n, listar imagenes disponibles: 
+</p>
+
+<pre>
+  # nova image-list 
+    +--------------------------------------+--------------+--------+--------+
+    | ID                                   | Name         | Status | Server |
+    +--------------------------------------+--------------+--------+--------+
+    | 2c0955c1-3811-451a-927e-4681bf26eca0 | CirrOS 0.3.1 | ACTIVE |        |
+    +--------------------------------------+--------------+--------+--------+
+
+</pre>
