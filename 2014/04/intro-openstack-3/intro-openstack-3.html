@@ -1,0 +1,234 @@
+OpenStack Introduction for Ubuntu Part III
+
+<p>This is the third Post about Open Stack Introduction. <a href="http://www.maigfrga.ntweb.co/openstack-introduction-ubuntu-part-i/">The first part of this post series
+is about general concepts, basic configuration and Identity service installation </a>, 
+<a href="http://www.maigfrga.ntweb.co/openstack-introduction-ubuntu-part-ii/"> the second part one continue with Image and Compute services.</a> This part is about dashboard and block storage configuration.
+<a href="http://docs.openstack.org/havana/install-guide/install/apt/content/">At this link a complete installation guide can be found.</a>
+</p>
+
+
+<h3>Install the Dashboard </h3>
+
+<p>
+The dashboard is a web interface that enables cloud administrators and users to manage various OpenStack 
+resources and services.
+The dashboard enables web-based interactions with the OpenStack Compute cloud controller through the OpenStack 
+APIs.
+</p>
+
+<p>
+   Install apache server and the dashboard on the node that can contact the Identity Service as root :
+</p>
+
+<pre>
+   # apt-get install apache2 libapache2-mod-wsgi  memcached  openstack-dashboard 
+</pre>
+
+<pre>
+   # apt-get remove --purge openstack-dashboard-ubuntu-theme 
+</pre>
+
+<p>
+Modify the value of CACHES['default']['LOCATION'] in /etc/openstack-dashboard/local_settings.py to match the ones set in /etc/memcached.conf
+</p>
+
+<pre>
+   CACHES = {
+    'default': {
+        'BACKEND' : 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION' : '127.0.0.1:11211'
+        }
+    }
+</pre>
+
+<p>
+   Update the ALLOWED_HOSTS in local_settings.py to include the addresses you wish to access the dashboard from 
+</p>
+
+<pre>
+   ALLOWED_HOSTS = ['localhost', 'my-desktop'] 
+   OPENSTACK_HOST = "controller" 
+</pre>
+
+<p>
+You can now access the dashboard at http://controller/horizon .
+
+Login with credentials for any user that you created with the OpenStack Identity Service.
+</p>
+
+<h3>Add the Block Storage Service</h3>
+<p>
+   The OpenStack Block Storage Service works though the interaction of a series of daemon processes named cinder-* that reside persistently on the host machine or machines. You can run the binaries from a single node or across multiple nodes. You can also run them on the same node as other OpenStack services. 
+ </p>
+
+<h4>Block Storage Service</h4>
+<p>
+The Block Storage Service enables management of volumes, volume snapshots, and volume types. It includes the following components:
+</p>
+
+<ul>
+    <li>cinder-api: Accepts API requests and routes them to cinder-volume for action. 
+    </li>
+    <li>
+       cinder-volume: Responds to requests to read from and write to the Block Storage database. 
+    </li>
+    <li>
+    cinder-scheduler daemon: Picks the optimal block storage provider node on which to create the volume.
+    </li>
+    <li>
+       Messaging queue: Routes information between the Block Storage Service processes. 
+    </li>
+</ul>
+
+<h4>Configure a Block Storage Service controller</h4>
+
+<p> Install packages </p>
+<pre>
+   # apt-get install cinder-api cinder-scheduler 
+</pre>
+<p>
+    Configure Block Storage to use your MySQL database. Edit the /etc/cinder/cinder.conf file and add the following key under the [database] section 
+</p>
+<pre>
+   [database]
+    ...
+    connection = mysql://cinder:CINDER_DBPASS@controller/cinder 
+</pre>
+<p>Create database and user</p>
+<p>
+   # mysql -u root -p
+    mysql> CREATE DATABASE cinder;
+    mysql> GRANT ALL PRIVILEGES ON cinder.* TO 'cinder'@'localhost' \
+    IDENTIFIED BY 'CINDER_DBPASS';
+    mysql> GRANT ALL PRIVILEGES ON cinder.* TO 'cinder'@'%' \
+    IDENTIFIED BY 'CINDER_DBPASS'; 
+</p>
+
+<p>Create tables </p>
+
+<pre>
+   # cinder-manage db sync 
+</pre>
+
+<p>Create a keystone  cinder user  </p>
+<pre>
+   # keystone user-create --name=cinder --pass=CINDER_PASS --email=cinder@example.com
+    +----------+----------------------------------+
+    | Property |              Value               |
+    +----------+----------------------------------+
+    |  email   |        cinder@example.com        |
+    | enabled  |               True               |
+    |    id    | ff2562ccad9d490aaf214e5e5e063186 |
+    |   name   |              cinder              |
+    +----------+----------------------------------+
+   
+   # keystone user-role-add --user=cinder --tenant=service --role=admin 
+</pre>
+
+<p>
+Add the credentials to the file /etc/cinder/api-paste.ini on the section [filter:authtoken]
+</p>
+
+<pre>
+    [filter:authtoken]
+    paste.filter_factory=keystoneclient.middleware.auth_token:filter_factory
+    auth_host=controller
+    auth_port = 35357
+    auth_protocol = http
+    auth_uri = http://controller:5000
+    admin_tenant_name=service
+    admin_user=cinder
+    admin_password=CINDER_PASS
+</pre>
+
+<p>
+Configure Block Storage to use the RabbitMQ message broker by setting these configuration keys in the [DEFAULT] configuration group of the /etc/cinder/cinder.conf file
+</p>
+
+<pre>
+   [DEFAULT]
+    ...
+    rpc_backend = cinder.openstack.common.rpc.impl_kombu
+    rabbit_host = controller
+    rabbit_port = 5672
+    rabbit_userid = guest
+    rabbit_password = RABBIT_PASS 
+</pre>
+
+<p>
+   Register the Block Storage Service with the Identity Service so that other OpenStack services can locate it. 
+</p>
+
+<pre>
+   # keystone service-create --name=cinder --type=volume --description="Cinder Volume Service" 
+    +-------------+----------------------------------+
+    |   Property  |              Value               |
+    +-------------+----------------------------------+
+    | description |      Cinder Volume Service       |
+    |      id     | 5f4ac31dd0334c9d89e72375f165c26d |
+    |     name    |              cinder              |
+    |     type    |              volume              |
+    +-------------+----------------------------------+
+</pre>
+
+<p>Use id property to create the endpoint  </p>
+
+<pre>
+   # keystone endpoint-create \
+  --service-id=the_service_id_above \
+  --publicurl=http://controller:8776/v1/%\(tenant_id\)s \
+  --internalurl=http://controller:8776/v1/%\(tenant_id\)s \
+  --adminurl=http://controller:8776/v1/%\(tenant_id\)s 
+</pre>
+
+
+<p>
+   Register a service and endpoint for version 2 of the Block Storage Service API. 
+</p>
+
+<pre>
+   # keystone service-create --name=cinderv2 --type=volumev2 \
+  --description="Cinder Volume Service V2" 
+
+    +-------------+----------------------------------+
+    |   Property  |              Value               |
+    +-------------+----------------------------------+
+    | description |     Cinder Volume Service V2     |
+    |      id     | 46d56ead76f94608b5ff8432b156b865 |
+    |     name    |             cinderv2             |
+    |     type    |             volumev2             |
+    +-------------+----------------------------------+
+
+</pre>
+
+<p>Register endpoint</p>
+
+<pre>
+       # keystone endpoint-create \
+  --service-id=the_service_id_above \
+  --publicurl=http://controller:8776/v1/%\(tenant_id\)s \
+  --internalurl=http://controller:8776/v1/%\(tenant_id\)s \
+  --adminurl=http://controller:8776/v1/%\(tenant_id\)s 
+
+</pre>
+
+
+<p>Restart the cinder service</p>
+<pre>
+   # service cinder-scheduler restart
+   # service cinder-api restart 
+</pre>
+
+<h4> Configure a Block Storage Service node </h4>
+<p>
+We will setup a new node that will contain the disk that serves volumes, update /etc/hosts int controller and in the new node:
+</p>
+
+<pre>
+    127.0.0.1       localhost
+    192.168.0.10    controller
+    192.168.0.11    compute1
+    192.168.0.12    block1
+</pre>
+
+
