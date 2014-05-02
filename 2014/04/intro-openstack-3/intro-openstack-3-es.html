@@ -1,23 +1,22 @@
-OpenStack Introduction for Ubuntu Part III
+Introducci&oacute;n a OpenStack para Ubuntu Parte III
 
-<p>This is the third Post about Open Stack Introduction. <a href="http://www.maigfrga.ntweb.co/openstack-introduction-ubuntu-part-i/">The first part of this post series
-is about general concepts, basic configuration and Identity service installation </a>, 
-<a href="http://www.maigfrga.ntweb.co/openstack-introduction-ubuntu-part-ii/"> the second part one continue with Image and Compute services.</a> This part is about dashboard and block storage configuration.
-<a href="http://docs.openstack.org/havana/install-guide/install/apt/content/">At this link a complete installation guide can be found.</a>
+<p>Es es el tercer Post de introducci&oacute;n a Open Stack. <a href="http://www.maigfrga.ntweb.co/openstack-introduction-ubuntu-part-i/"> La primer parte de esta serie es sobre conceptos generales, confiuraci&oacute;n b&aacute;sica e instalaci&oacute;n del Identity service </a>, 
+<a href="http://www.maigfrga.ntweb.co/openstack-introduction-ubuntu-part-ii/"> la segunda parte continua con Image y compute services.</a> Esta parte es sobre el dashboard y block storage.
+<a href="http://docs.openstack.org/havana/install-guide/install/apt/content/">En este enlace se puede encontrar la gu&iacute;a completa.</a>
 </p>
 
 
-<h3>Install the Dashboard </h3>
+<h3>Instalando el Dashboard </h3>
+
 
 <p>
-The dashboard is a web interface that enables cloud administrators and users to manage various OpenStack 
-resources and services.
-The dashboard enables web-based interactions with the OpenStack Compute cloud controller through the OpenStack 
+El dashboard is a una app web que permite a usuarios y administradores administrar los servicios y recursos
+de OpenStack. Esta app permite interacci&oacute;n con el OpenStack Compute cloud controller a trav&ecute;s de las
 APIs.
 </p>
 
 <p>
-   Install apache server and the dashboard on the node that can contact the Identity Service as root :
+   Instalar apache server y el dashboard en el controller:
 </p>
 
 <pre>
@@ -29,7 +28,8 @@ APIs.
 </pre>
 
 <p>
-Modify the value of CACHES['default']['LOCATION'] in /etc/openstack-dashboard/local_settings.py to match the ones set in /etc/memcached.conf
+Modifar el valor de CACHES['default']['LOCATION'] en /etc/openstack-dashboard/local_settings.py para coincider
+con los valores definidos en  /etc/memcached.conf
 </p>
 
 <pre>
@@ -42,7 +42,8 @@ Modify the value of CACHES['default']['LOCATION'] in /etc/openstack-dashboard/lo
 </pre>
 
 <p>
-   Update the ALLOWED_HOSTS in local_settings.py to include the addresses you wish to access the dashboard from 
+   Actualizar el parametro ALLOWED_HOSTS en local_settings.py  para incluid las direcciones desde las cuales se
+   desea acceder al dashboard.
 </p>
 
 <pre>
@@ -51,50 +52,57 @@ Modify the value of CACHES['default']['LOCATION'] in /etc/openstack-dashboard/lo
 </pre>
 
 <p>
-You can now access the dashboard at http://controller/horizon .
-
-Login with credentials for any user that you created with the OpenStack Identity Service.
+El dashboard es accesible en  http://controller/horizon .
+Las credenciales de acceso son las usadas por alguno de los usuarios creado con el OpenStack Identity Service.
 </p>
 
-<h3>Add the Block Storage Service</h3>
+<h3>Agregar el Block Storage Service</h3>
+
+
 <p>
-   The OpenStack Block Storage Service works though the interaction of a series of daemon processes named cinder-* that reside persistently on the host machine or machines. You can run the binaries from a single node or across multiple nodes. You can also run them on the same node as other OpenStack services. 
+   OpenStack Block Storage Service funciona a trav&eacute;s de la interacci&oacute;n de una serie de procesos
+   llamados cinder-* que residen en la(s) mquina(s) . Es posible desplegar estos servicios en uno o varios nodos . 
  </p>
 
 <h4>Block Storage Service</h4>
 <p>
-The Block Storage Service enables management of volumes, volume snapshots, and volume types. It includes the following components:
+ Block Storage Service permite el manejo de volumenes, snapshots, y tipos de volumenes. Incluye los siguientes
+ componentes:
 </p>
 
 <ul>
-    <li>cinder-api: Accepts API requests and routes them to cinder-volume for action. 
+    <li>cinder-api: Acepta API requests y las mapea a los procesos cinder-volume. 
     </li>
     <li>
-       cinder-volume: Responds to requests to read from and write to the Block Storage database. 
+       cinder-volume: Responde requests de lectura y escritura a la base de datos  Block Storage . 
     </li>
     <li>
-    cinder-scheduler daemon: Picks the optimal block storage provider node on which to create the volume.
+    cinder-scheduler daemon: Selecciona el proveedor de block storage optimo para crear el volumen.
     </li>
     <li>
-       Messaging queue: Routes information between the Block Storage Service processes. 
+       Messaging queue: Rutea informaci&oacute;n entre los procesos de Block Storage Service. 
     </li>
 </ul>
 
-<h4>Configure a Block Storage Service controller</h4>
 
-<p> Install packages </p>
+
+<h4>Configurar Block Storage Service controller</h4>
+<p> Instalar paquetes </p>
 <pre>
    # apt-get install cinder-api cinder-scheduler 
 </pre>
 <p>
-    Configure Block Storage to use your MySQL database. Edit the /etc/cinder/cinder.conf file and add the following key under the [database] section 
+Configurar Block Storage para usar  MySQL database. Editar  /etc/cinder/cinder.conf y agregar la siguiente
+configuraci&oacute;n en la secci&oacute;n  [database] 
 </p>
+
 <pre>
    [database]
     ...
     connection = mysql://cinder:CINDER_DBPASS@controller/cinder 
 </pre>
-<p>Create database and user</p>
+
+<p>Crear base de datos y usario</p>
 <p>
    # mysql -u root -p
     mysql> CREATE DATABASE cinder;
@@ -104,13 +112,13 @@ The Block Storage Service enables management of volumes, volume snapshots, and v
     IDENTIFIED BY 'CINDER_DBPASS'; 
 </p>
 
-<p>Create tables </p>
+<p>Crear tablas </p>
 
 <pre>
    # cinder-manage db sync 
 </pre>
 
-<p>Create a keystone  cinder user  </p>
+<p>Create a usuario cinder en keystone</p>
 <pre>
    # keystone user-create --name=cinder --pass=CINDER_PASS --email=cinder@example.com
     +----------+----------------------------------+
@@ -125,8 +133,9 @@ The Block Storage Service enables management of volumes, volume snapshots, and v
    # keystone user-role-add --user=cinder --tenant=service --role=admin 
 </pre>
 
+
 <p>
-Add the credentials to the file /etc/cinder/api-paste.ini on the section [filter:authtoken]
+Agregar credenciales al archivo /etc/cinder/api-paste.ini en la secci&oacute;n [filter:authtoken]
 </p>
 
 <pre>
@@ -141,8 +150,9 @@ Add the credentials to the file /etc/cinder/api-paste.ini on the section [filter
     admin_password=CINDER_PASS
 </pre>
 
+
 <p>
-Configure Block Storage to use the RabbitMQ message broker by setting these configuration keys in the [DEFAULT] configuration group of the /etc/cinder/cinder.conf file
+Configurar Block Storage para usar RabbitMQ message broker. Edital la secci&oacute;n [DEFAULT] en el archivo /etc/cinder/cinder.conf 
 </p>
 
 <pre>
@@ -155,8 +165,10 @@ Configure Block Storage to use the RabbitMQ message broker by setting these conf
     rabbit_password = RABBIT_PASS 
 </pre>
 
+
 <p>
-   Register the Block Storage Service with the Identity Service so that other OpenStack services can locate it. 
+   Registrar el servicio Block Storage Service en el Identity Service para que los servicios de OpenStack puedan
+   localizarlo. 
 </p>
 
 <pre>
@@ -171,7 +183,7 @@ Configure Block Storage to use the RabbitMQ message broker by setting these conf
     +-------------+----------------------------------+
 </pre>
 
-<p>Use id property to create the endpoint  </p>
+<p>Usar la propiedad id para crear el endpoint  </p>
 
 <pre>
    # keystone endpoint-create \
@@ -181,9 +193,8 @@ Configure Block Storage to use the RabbitMQ message broker by setting these conf
   --adminurl=http://controller:8776/v1/%\(tenant_id\)s 
 </pre>
 
-
 <p>
-   Register a service and endpoint for version 2 of the Block Storage Service API. 
+   Registar el servicio y endpoint para la version 2 de Block Storage Service API.
 </p>
 
 <pre>
@@ -201,7 +212,7 @@ Configure Block Storage to use the RabbitMQ message broker by setting these conf
 
 </pre>
 
-<p>Register endpoint</p>
+<p>Registar endpoint</p>
 
 <pre>
        # keystone endpoint-create \
@@ -213,15 +224,19 @@ Configure Block Storage to use the RabbitMQ message broker by setting these conf
 </pre>
 
 
-<p>Restart the cinder service</p>
+<p>Reiniciar cinder service</p>
 <pre>
    # service cinder-scheduler restart
    # service cinder-api restart 
 </pre>
 
-<h4> Configure a Block Storage Service node </h4>
+
+<h4> Configurar un nodo Block Storage Service</h4>
+
+
 <p>
-We will setup a new node that will contain the disk that serves volumes, update /etc/hosts in controller and in the new node:
+Configuraremos un nuevo nodo que contendr&aacute; el disco que servira los volumenes, para esto es necesario
+actualizar el archivo /etc/hosts en el nodo controlador y en nuevo nodo:
 </p>
 
 <pre>
@@ -231,14 +246,15 @@ We will setup a new node that will contain the disk that serves volumes, update 
     192.168.0.12    block1
 </pre>
 
-<p>Install the required LVM packages in the block1 node</p>
+<p>Instalar los paquetes LVM en el nodo the block1</p>
 
 <pre>
    # apt-get install lvm2 
 </pre>
 
 <p>
-   Create the LVM physical and logical volumes. This guide assumes a second disk /dev/sdb that is used for this purpose 
+Crear los volumenes fisicos y logicos. Esta gu&iacute;a asume que un segundo disco /dev/sdb es usado para este
+proposito.
 </p>
 
 <pre>
@@ -247,11 +263,13 @@ We will setup a new node that will contain the disk that serves volumes, update 
 </pre>
 
 <p>
-   Add a filter entry to the devices section /etc/lvm/lvm.conf to keep LVM from scanning devices used by virtual machines.
-   Each item in the filter array starts with either an a for accept, or an r for reject. The physical volumes that are required on the Block Storage host have names that begin with a. 
-   The array must end with "r/.*/" to reject any device not listed.
+   Agregar una entrada en el filtro LVM en la secci&oacute;n devices en /etc/lvm/lvm.conf  para evitar que 
+   LVM utlice dispositivos usados por las maquinas virtuales.
+   Cata item en el filtro comienza con una a para aceptar o una r para denegar, el array debe terminar en "r/.*/"
+   para denegar dispositivos no listados.
 
-    In this example, /dev/sda1 is the volume where the volumes for the operating system for the node reside, while /dev/sdb is the volume reserved for cinder-volumes.  
+    En este ejemplo /dev/sda1 es el volumen del sistema operativo y /dev/sdb el reservado para volumenes cinder.
+
 </p>
 <pre>
    devices {
@@ -262,15 +280,16 @@ We will setup a new node that will contain the disk that serves volumes, update 
 </pre>
 
 <p>
-    Install the appropriate packages for the Block Storage Service on block1 node
+    Instalar los paquetes para Block Storage Service en el nodo block1 
 </p>
 
 <pre>
    # apt-get install cinder-volume 
 </pre>
 
+
 <p>
-Edit /etc/cinder/api-paste.ini , locate the section [filter:authtoken]:
+Editar /etc/cinder/api-paste.ini , en la secci&oacute;n [filter:authtoken]:
 </p>
 
 <pre>
@@ -285,7 +304,8 @@ Edit /etc/cinder/api-paste.ini , locate the section [filter:authtoken]:
 </pre>
 
 <p>
-Configure Block Storage to use the RabbitMQ message broker by setting these configuration keys in the [DEFAULT] configuration group of the /etc/cinder/cinder.conf file
+Configurar Block Storage para user RabbitMQ message broker editando la secci&oacute;n  [DEFAULT] 
+en  /etc/cinder/cinder.conf 
 </p>
 
 <pre>
@@ -299,7 +319,7 @@ Configure Block Storage to use the RabbitMQ message broker by setting these conf
 </pre>
 
 <p>
-Configure Block Storage to use your MySQL database. Edit the /etc/cinder/cinder.conf 
+Configurar Block Storage para usar la bd MySQL. Editar  /etc/cinder/cinder.conf 
 </p>
 
 <pre>
@@ -308,7 +328,7 @@ Configure Block Storage to use your MySQL database. Edit the /etc/cinder/cinder.
     connection = mysql://cinder:CINDER_DBPASS@controller/cinder 
 </pre>
 
-<p> Restart the cinder service:   </p>
+<p> Reiniciar cinder service:   </p>
 
 <pre>
    # service cinder-volume restart

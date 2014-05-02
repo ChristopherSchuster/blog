@@ -1,0 +1,17 @@
+<h3>Add Object Storage</h3>
+
+<h4>Object Storage service</h4>
+
+<p>
+The Object Storage service is a storage system for large amounts of unstructured data through a RESTful HTTP API.
+It includes the following components:
+</p>
+
+<ul>
+    <li>Proxy servers (swift-proxy-server). Accepts Object Storage API and raw HTTP requests to upload files, modify metadata, and create containers.</li>
+    <li>Account servers (swift-account-server). Manage accounts defined with the Object Storage service  </li>
+    <li>Container servers (swift-container-server). Manage a mapping of containers, or folders, within the Object Storage service.</li>
+    <li>Object servers (swift-object-server). Manage actual objects, such as files, on the storage nodes.  </li>
+    <li>Periodic process for general maintenance tasks (auditors, updaters, reapers) </li>
+    <li>Object servers (swift-object-server). Manage actual objects, such as files, on the storage nodes.</li>
+</ul>
