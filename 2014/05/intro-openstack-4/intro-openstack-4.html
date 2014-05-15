@@ -1,3 +1,14 @@
+OpenStack Introduction for Ubuntu Part IV
+
+
+<p>This is the fourth  Post about Open Stack Introduction. <a href="http://www.maigfrga.ntweb.co/openstack-introduction-ubuntu-part-i/">The first part of this post series
+is about general concepts, basic configuration and Identity service installation </a>, 
+<a href="http://www.maigfrga.ntweb.co/openstack-introduction-ubuntu-part-ii/"> the second part one continue with Image and Compute services.</a>, <a href="http://www.maigfrga.ntweb.co/introduccion-a-openstack-para-ubuntu-parte-iii/"> the third part is about about dashboard and block storage configuration.</a>.
+This part is about Object Storage Service and Networking service.
+<a href="http://docs.openstack.org/havana/install-guide/install/apt/content/">At this link a complete installation guide can be found.</a>
+</p>
+
+
 <h3>Add Object Storage</h3>
 
 <h4>Object Storage service</h4>
@@ -15,3 +26,156 @@ It includes the following components:
     <li>Periodic process for general maintenance tasks (auditors, updaters, reapers) </li>
     <li>Object servers (swift-object-server). Manage actual objects, such as files, on the storage nodes.</li>
 </ul>
+
+<h4> Systems Requirements</h4>
+<p>At this guide we won't think about this, but for a real production environment <a href="http://docs.openstack.org/havana/install-guide/install/apt/content/object-storage-system-requirements.html"> You need to study carefully the system requirements defined at this link. </a> 
+</p>
+
+<h4>Plan networking for Object Storage</h4>
+
+<p>
+ For this guide we'll only setup a mandatory public network and a mandatory storage network. 
+ <a href="http://docs.openstack.org/havana/install-guide/install/apt/content/object-storage-network-planning.html"> Another options can be found at this link</a>
+</p>
+
+<h4>Example Object Storage installation architecture</h4>
+
+<ul>
+    <li>
+        Node: A host machine that runs one or more OpenStack Object Storage services.
+    </li>
+
+    <li>
+        Proxy node: Runs Proxy services.
+    </li>
+
+    <li>
+        Storage node: Runs Account, Container, and Object services.
+    </li>    
+
+    <li>
+    Ring: A set of mappings between OpenStack Object Storage data to physical devices.
+    </li>
+
+    <li>
+    Replica: A copy of an object. By default, three copies are maintained in the cluster.
+    </li>
+
+    <li>
+    Zone: A logically separate section of the cluster, related to independent failure characteristics.
+    </li>
+</ul>   
+
+<p><strong>Note:</strong> for this guide  we will install the object storage service on a single node that
+will be known as storage1</p>
+
+<p> Edit /etc/hosts in all nodes (controller, block1 , storage1)
+
+</p>
+
+<pre>
+    127.0.0.1       localhost
+    192.168.0.10    controller
+    192.168.0.11    compute1
+    192.168.0.12    block1
+    192.168.0.13    storage1
+
+</pre>
+
+<p>Edit /etc/hostname and set hostname to storage1
+</p>
+
+<p> Add Open Stack repositories</p>
+
+<pre>
+   # apt-get install python-software-properties
+   # add-apt-repository cloud-archive:havana 
+   # apt-get update && apt-get dist-upgrade
+   # reboot
+</pre>
+
+<p>
+Create a swift user that the Object Storage Service can use to authenticate with the Identity Service.
+Execute the next commands in the controller node:
+</p>
+
+<pre>
+   # keystone user-create --name=swift --pass=SWIFT_PASS \
+  --email=swift@example.com
+  # keystone user-role-add --user=swift --tenant=service --role=admin 
+
+    +----------+----------------------------------+
+    | Property |              Value               |
+    +----------+----------------------------------+
+    |  email   |        swift@example.com         |
+    | enabled  |               True               |
+    |    id    | b64f304b791d485ea960d8a0296bb63d |
+    |   name   |              swift               |
+    +----------+----------------------------------+
+
+</pre>
+
+<p>
+   Create a service entry for the Object Storage Service: 
+</p>
+
+<pre>
+   # keystone service-create --name=swift --type=object-store \
+  --description="Object Storage Service" 
+
+    +-------------+----------------------------------+
+    |   Property  |              Value               |
+    +-------------+----------------------------------+
+    | description |      Object Storage Service      |
+    |      id     | e54246ea9eb64d5ca002cbf5481dd5eb |
+    |     name    |              swift               |
+    |     type    |           object-store           |
+    +-------------+----------------------------------+
+
+</pre>
+
+<p>
+Specify an API endpoint for the Object Storage Service by using the returned service ID. 
+</p>
+
+<pre>
+# keystone endpoint-create \
+  --service-id=the_service_id_above \
+  --publicurl='http://controller:8080/v1/AUTH_%(tenant_id)s' \
+  --internalurl='http://controller:8080/v1/AUTH_%(tenant_id)s' \
+  --adminurl=http://controller:8080
+
+    +-------------+----------------------------------------------+
+    |   Property  |                    Value                     |
+    +-------------+----------------------------------------------+
+    |   adminurl  |            http://controller:8080            |
+    |      id     |       e8f5a0654b7f4af6a9c2357250dd5c63       |
+    | internalurl | http://controller:8080/v1/AUTH_%(tenant_id)s |
+    |  publicurl  | http://controller:8080/v1/AUTH_%(tenant_id)s |
+    |    region   |                  regionOne                   |
+    |  service_id |       e54246ea9eb64d5ca002cbf5481dd5eb       |
+    +-------------+----------------------------------------------+
+
+</pre>
+
+<p>
+   Create the configuration directory on all nodes: 
+</p>
+
+<pre>
+   # mkdir -p /etc/swift 
+</pre>
+
+<p>
+Create /etc/swift/swift.conf on all nodes:
+</p>
+
+<pre>
+    [swift-hash]
+    # random unique string that can never change (DO NOT LOSE)
+    swift_hash_path_suffix = afLIeftgibit
+</pre>
+
+<p>
+    <strong>Note:</strong> The suffix value in /etc/swift/swift.conf should be set to some random string of text to be used as a salt when hashing to determine mappings in the ring. This file must be the same on every node in the cluster! 
+</p>
