@@ -24,7 +24,6 @@ It includes the following components:
     <li>Container servers (swift-container-server). Manage a mapping of containers, or folders, within the Object Storage service.</li>
     <li>Object servers (swift-object-server). Manage actual objects, such as files, on the storage nodes.  </li>
     <li>Periodic process for general maintenance tasks (auditors, updaters, reapers) </li>
-    <li>Object servers (swift-object-server). Manage actual objects, such as files, on the storage nodes.</li>
 </ul>
 
 <h4> Systems Requirements</h4>
@@ -66,10 +65,12 @@ It includes the following components:
     </li>
 </ul>   
 
-<p><strong>Note:</strong> for this guide  we will install the object storage service on a single node that
-will be known as storage1</p>
+<p><strong>Note:</strong> for this guide  we will install one proxy node which runs the swift-proxy-server processes and three storage nodes 
+    that run the swift-account-server, swift-container-server, and swift-object-server processes which control storage of the account databases, 
+    the container databases, as well as the actual stored objects.
+</p>
 
-<p> Edit /etc/hosts in all nodes (controller, block1 , storage1)
+<p> Edit /etc/hosts in all nodes (controller, block1 , storage1...)
 
 </p>
 
@@ -78,8 +79,10 @@ will be known as storage1</p>
     192.168.0.10    controller
     192.168.0.11    compute1
     192.168.0.12    block1
-    192.168.0.13    storage1
-
+    192.168.0.13    swift-proxy
+    192.168.0.14    storage1
+    192.168.0.15    storage2
+    192.168.0.16    storage3
 </pre>
 
 <p>Edit /etc/hostname and set hostname to storage1
@@ -141,9 +144,9 @@ Specify an API endpoint for the Object Storage Service by using the returned ser
 <pre>
 # keystone endpoint-create \
   --service-id=the_service_id_above \
-  --publicurl='http://controller:8080/v1/AUTH_%(tenant_id)s' \
-  --internalurl='http://controller:8080/v1/AUTH_%(tenant_id)s' \
-  --adminurl=http://controller:8080
+  --publicurl='http://storage1:8080/v1/AUTH_%(tenant_id)s' \
+  --internalurl='http://storage1:8080/v1/AUTH_%(tenant_id)s' \
+  --adminurl=http://storage1:8080
 
     +-------------+----------------------------------------------+
     |   Property  |                    Value                     |
@@ -159,7 +162,7 @@ Specify an API endpoint for the Object Storage Service by using the returned ser
 </pre>
 
 <p>
-   Create the configuration directory on all nodes: 
+   Create the configuration directory on all swift nodes (In this guide is only one node): 
 </p>
 
 <pre>
@@ -244,6 +247,9 @@ Start the rsync service:
 
 <pre>
    # service rsync start 
+   # mkdir -p /var/swift/recon
+  # chown -R swift:swift /var/swift/recon
+
 </pre>
 
 <h4>Install and configure the proxy node</h4>
@@ -303,19 +309,19 @@ Create /etc/swift/proxy-server.conf:
     [filter:authtoken]
     paste.filter_factory = keystoneclient.middleware.auth_token:filter_factory
      
-# Delaying the auth decision is required to support token-less
-# usage for anonymous referrers ('.r:*').
+    # Delaying the auth decision is required to support token-less
+    # usage for anonymous referrers ('.r:*').
     delay_auth_decision = true
      
-# cache directory for signing certificate
+    # cache directory for signing certificate
     signing_dir = /home/swift/keystone-signing
      
-# auth_* settings refer to the Keystone server
+    # auth_* settings refer to the Keystone server
     auth_protocol = http
     auth_host = controller
     auth_port = 35357
      
-# the service tenant and swift username and password created in Keystone
+    # the service tenant and swift username and password created in Keystone
     admin_tenant_name = service
     admin_user = swift
     admin_password = SWIFT_PASS
@@ -440,3 +446,27 @@ Start services on the storage nodes
 <p>
 You can run these commands from the proxy server or any server that has access to the Identity Service. 
 </p>
+
+
+<pre>
+  #swift stat  
+   Account: AUTH_fe13b472ad9e43e2aa8c71e7cc1c5f7c
+Containers: 0
+   Objects: 0
+     Bytes: 0
+Content-Type: text/plain; charset=utf-8
+X-Timestamp: 1402842465.82440
+X-Put-Timestamp: 1402842465.82440
+    
+</pre>
+
+
+<p>
+    Create and upload a test.txt file
+</p>
+
+
+<pre>
+    $echo "this is a test" > test.txt
+    $swift upload myfiles test.txt 
+</pre>

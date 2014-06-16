@@ -206,9 +206,9 @@ Configure Block Storage to use the RabbitMQ message broker by setting these conf
 <pre>
        # keystone endpoint-create \
   --service-id=the_service_id_above \
-  --publicurl=http://controller:8776/v1/%\(tenant_id\)s \
-  --internalurl=http://controller:8776/v1/%\(tenant_id\)s \
-  --adminurl=http://controller:8776/v1/%\(tenant_id\)s 
+  --publicurl=http://controller:8776/v2/%\(tenant_id\)s \
+  --internalurl=http://controller:8776/v2/%\(tenant_id\)s \
+  --adminurl=http://controller:8776/v2/%\(tenant_id\)s 
 
 </pre>
 
@@ -306,6 +306,15 @@ Configure Block Storage to use your MySQL database. Edit the /etc/cinder/cinder.
    [database]
     ...
     connection = mysql://cinder:CINDER_DBPASS@controller/cinder 
+</pre>
+
+<p>
+Configure Block Storage to use the Image Service.  Edit the /etc/cinder/cinder.conf file and update the glance_host option in the [DEFAULT] section:
+</p>
+<pre>
+[DEFAULT]
+...
+glance_host = controller
 </pre>
 
 <p> Restart the cinder service:   </p>
