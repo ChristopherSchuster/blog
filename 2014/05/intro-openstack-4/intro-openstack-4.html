@@ -35,7 +35,21 @@ It includes the following components:
 <p>
  For this guide we'll only setup a mandatory public network and a mandatory storage network. 
  <a href="http://docs.openstack.org/havana/install-guide/install/apt/content/object-storage-network-planning.html"> Another options can be found at this link</a>
+
+ This network will have one proxy and 3 storage nodes with the next ip addresses:
 </p>
+
+<pre>
+    192.168.0.13    swift-proxy
+    192.168.0.14    storage1
+    192.168.0.15    storage2
+    192.168.0.16    storage3
+</pre>
+
+<p>
+    The param  STORAGE_LOCAL_NET_IP is a CIDR that dependes of your network configuration.
+</p>
+
 
 <h4>Example Object Storage installation architecture</h4>
 
@@ -88,6 +102,7 @@ It includes the following components:
 <p>Edit /etc/hostname and set hostname to storage1
 </p>
 
+<h4>General Installation steps</h4>
 <p> Add Open Stack repositories</p>
 
 <pre>
@@ -144,9 +159,9 @@ Specify an API endpoint for the Object Storage Service by using the returned ser
 <pre>
 # keystone endpoint-create \
   --service-id=the_service_id_above \
-  --publicurl='http://storage1:8080/v1/AUTH_%(tenant_id)s' \
-  --internalurl='http://storage1:8080/v1/AUTH_%(tenant_id)s' \
-  --adminurl=http://storage1:8080
+  --publicurl='http://swift-proxy:8080/v1/AUTH_%(tenant_id)s' \
+  --internalurl='http://swift-proxy:8080/v1/AUTH_%(tenant_id)s' \
+  --adminurl=http://swift-proxy:8080
 
     +-------------+----------------------------------------------+
     |   Property  |                    Value                     |
@@ -162,7 +177,7 @@ Specify an API endpoint for the Object Storage Service by using the returned ser
 </pre>
 
 <p>
-   Create the configuration directory on all swift nodes (In this guide is only one node): 
+   Create the configuration directory on all swift nodes: 
 </p>
 
 <pre>
@@ -182,6 +197,8 @@ Create /etc/swift/swift.conf on all nodes:
 <p>
     <strong>Note:</strong> The suffix value in /etc/swift/swift.conf should be set to some random string of text to be used as a salt when hashing to determine mappings in the ring. This file must be the same on every node in the cluster! 
 </p>
+
+<h4>Install and configure Storage nodes</h4>
 
 <p>Install Storage node packages:</p>
 
@@ -328,7 +345,8 @@ Create /etc/swift/proxy-server.conf:
      
     [filter:cache]
     use = egg:swift#memcache
-     
+    memcache_servers = PROXY_LOCAL_NET_IP
+
     [filter:catch_errors]
     use = egg:swift#catch_errors
      
@@ -359,30 +377,26 @@ For every storage device on each node add entries to each ring:
     # swift-ring-builder object.builder add zZONE-STORAGE_LOCAL_NET_IP_1:6000[RSTORAGE_REPLICATION_NET_IP:6003]/DEVICE 100
 </pre>
 
-<p>
-<strong> Note: </strong> In this post we only have on storage device on one node and we don't have replication so wan ignore the optional STORAGE_REPLICATION_NET_IP parameter:
-
-</p>
 
 
 <p>
-   For example, if a storage node has a partition in Zone 1 on IP 192.168.0.16 without replication network. The mount point of this partition is /srv/node/sdb1, and the path in /etc/rsyncd.conf is /srv/node/, the DEVICE would be sdb1 and the commands are: 
+  In this guide. every storage node has a partition in Zone 1 . Their  IP adress are 192.168.0.14, 192.168.0.15 and 192.168.0.16 without replication network. 
+  The mount point of this partition is /srv/node/sdb1, and the path in /etc/rsyncd.conf is /srv/node/, the DEVICE would be sdb1 and the commands are: 
 </p>
 
 <pre>
+
+    # swift-ring-builder account.builder add z1-192.168.0.14:6002/sdb1 100
+    # swift-ring-builder container.builder add z1-192.168.0.14:6001/sdb1 100
+    # swift-ring-builder object.builder add z1-192.168.0.14:6000/sdb1 100
+
+    # swift-ring-builder account.builder add z1-192.168.0.15:6002/sdb1 100
+    # swift-ring-builder container.builder add z1-192.168.0.15:6001/sdb1 100
+    # swift-ring-builder object.builder add z1-192.168.0.15:6000/sdb1 100
+
     # swift-ring-builder account.builder add z1-192.168.0.16:6002/sdb1 100
-    WARNING: No region specified for z1-192.168.0.16:6002/sdb1. Defaulting to region 1.
-    Device d0r1z1-192.168.0.16:6002R192.168.0.16:6002/sdb1_"" with 100.0 weight got id 0
-
-    #swift-ring-builder container.builder add z1-192.168.0.16:6002/sdb1 100
-    WARNING: No region specified for z1-192.168.0.16:6002/sdb1. Defaulting to region 1.
-    Device d0r1z1-192.168.0.16:6002R192.168.0.16:6002/sdb1_"" with 100.0 weight got id 0
-
-
-
-    # swift-ring-builder object.builder add z1-192.168.0.16:6002/sdb1 100
-    WARNING: No region specified for z1-192.168.0.16:6002/sdb1. Defaulting to region 1.
-    Device d0r1z1-192.168.0.16:6002R192.168.0.16:6002/sdb1_"" with 100.0 weight got id 0
+    # swift-ring-builder container.builder add z1-192.168.0.16:6001/sdb1 100
+    # swift-ring-builder object.builder add z1-192.168.0.16:6000/sdb1 100
 </pre>
 
 <p>
@@ -469,4 +483,6 @@ X-Put-Timestamp: 1402842465.82440
 <pre>
     $echo "this is a test" > test.txt
     $swift upload myfiles test.txt 
+
+    $swift download myfiles  
 </pre>
