@@ -1,43 +1,47 @@
-OpenStack Introduction for Ubuntu Part IV
+Introduccion OpenStack para Ubuntu Parte IV
 
 
-<p>This is the fourth  Post about Open Stack Introduction. <a href="http://www.maigfrga.ntweb.co/openstack-introduction-ubuntu-part-i/">The first part of this post series
-is about general concepts, basic configuration and Identity service installation </a>, 
-<a href="http://www.maigfrga.ntweb.co/openstack-introduction-ubuntu-part-ii/"> the second part one continue with Image and Compute services.</a>, <a href="http://www.maigfrga.ntweb.co/introduccion-a-openstack-para-ubuntu-parte-iii/"> the third part is about about dashboard and block storage configuration.</a>.
-This part is about Object Storage service.
-<a href="http://docs.openstack.org/havana/install-guide/install/apt/content/">At this link a complete installation guide can be found.</a>
+<p> Esta es la cuarta parte de la serie de Introducci&oacute;n a Open Stack. 
+<a href="http://www.maigfrga.ntweb.co/openstack-introduction-ubuntu-part-i/">La primera parte habla sobre conceptos generales,
+configuraciones b&aacute;sicas e instalaci&oacute;n the servicio de autenticaci&oacute;n </a>, 
+<a href="http://www.maigfrga.ntweb.co/openstack-introduction-ubuntu-part-ii/"> la segunda parte habla sobre los servicios
+ de gestion de imagenes y maquinas virtuales.</a>, 
+ <a href="http://www.maigfrga.ntweb.co/introduccion-a-openstack-para-ubuntu-parte-iii/"> la tercer parte habla sobre el panel de control
+ y  block storage.</a>. Esta parte habla sobre el servicio de almacenamiento (Object Storage)
+<a href="http://docs.openstack.org/havana/install-guide/install/apt/content/">En este enlace se puede encontrar la documentaci&oacute;n oficial.</a>
 </p>
 
 
-<h3>Add Object Storage</h3>
+<h3>Instalando Object Storage</h3>
 
 <h4>Object Storage service</h4>
 
 <p>
-The Object Storage service is a storage system for large amounts of unstructured data through a RESTful HTTP API.
-It includes the following components:
+Este servicio es un sistema de alcenamiento de grandes cantidades de datos no estructurados que pueden ser accedidos utilizando una API RESTful HTTP .
+Incluye los siguientes componentes:
 </p>
 
 <ul>
-    <li>Proxy servers (swift-proxy-server). Accepts Object Storage API and raw HTTP requests to upload files, modify metadata, and create containers.</li>
-    <li>Account servers (swift-account-server). Manage accounts defined with the Object Storage service  </li>
-    <li>Container servers (swift-container-server). Manage a mapping of containers, or folders, within the Object Storage service.</li>
-    <li>Object servers (swift-object-server). Manage actual objects, such as files, on the storage nodes.  </li>
-    <li>Periodic process for general maintenance tasks (auditors, updaters, reapers) </li>
+    <li>Proxy servers (swift-proxy-server). Acepta peticiones HTTP para gestionar archivos y contenedores.</li>
+    <li>Account servers (swift-account-server). Gestiona cuentas definidas por el  Object Storage service  </li>
+    <li>Container servers (swift-container-server). Administra el mapeo de contenedores o folders.</li>
+    <li>Object servers (swift-object-server). Gestiona los archivos en los nodos.  </li>
+    <li>Procesos periodicos de mantenimiento  (auditors, updaters, reapers) </li>
 </ul>
 
-<h4> Systems Requirements</h4>
-<p>At this guide we won't think about this, but for a real production environment <a href="http://docs.openstack.org/havana/install-guide/install/apt/content/object-storage-system-requirements.html"> You need to study carefully the system requirements defined at this link. </a> 
+<h4> Requirementos del sistema</h4>
+<p>Para efectos ilustrativos de esta gu&iacute;a no hablaremos de este tema , para un entorno real de producci&oacute; <a href="http://docs.openstack.org/havana/install-guide/install/apt/content/object-storage-system-requirements.html"> Es necesario analizar detalladamente los requerimientos definidos en este 
+enlace. </a> 
 </p>
 
-<h4>Plan networking for Object Storage</h4>
+<h4>Planeando la configuraci&oacute;n de red</h4>
 
 <p>
- 
+En esta gu&iacute;a configuraremos una red interna de un servidor proxy y 3 nodos de almacenamiento
 
- This network will have one proxy and 3 storage nodes with the next ip addresses:
+
 </p>
-
+ 
 <pre>
     192.168.0.13    swift-proxy
     192.168.0.14    storage1
@@ -46,45 +50,48 @@ It includes the following components:
 </pre>
 
 <p>
-    The param  STORAGE_LOCAL_NET_IP  is the local ip address of every storage node.
+    El parametro  STORAGE_LOCAL_NET_IP is la direcci&oacute;n IP de cada nodo de almacenamiento.
 </p>
+
 <p>
-<a href="http://docs.openstack.org/havana/install-guide/install/apt/content/object-storage-network-planning.html"> Another network options can be found at this link</a>
+<a href="http://docs.openstack.org/havana/install-guide/install/apt/content/object-storage-network-planning.html"> 
+Otras opciones de configuraciones de red en este enlace</a>
 </p>
-<h4>Example Object Storage installation architecture</h4>
+
+
+
+<h4>Ejemplo de arquitectura de Object Storage </h4>
 
 <ul>
     <li>
-        Node: A host machine that runs one or more OpenStack Object Storage services.
+        Node: Un host que ejecuta uno o m&aacute;s servicios  OpenStack Object Storage.
     </li>
 
     <li>
-        Proxy node: Runs Proxy services.
+        Proxy node:  Ejecuta servicios proxy.
     </li>
 
     <li>
-        Storage node: Runs Account, Container, and Object services.
+        Storage node: Ejecuta servicios de cuentas, contenedores y objetos.
     </li>    
 
     <li>
-    Ring: A set of mappings between OpenStack Object Storage data to physical devices.
+        Ring:  Un conjunto de mapeos entre datos del servicio OpenStack Object Storage data y dispositivos f&iacute;sicos.
     </li>
 
     <li>
-    Replica: A copy of an object. By default, three copies are maintained in the cluster.
+    Replica: Una copia de un objecto, por defecto 3 copias de cada objeto son almacenadas en el cluster .
     </li>
 
     <li>
-    Zone: A logically separate section of the cluster, related to independent failure characteristics.
+    Zona:  Una secci&oacute;n logicamente separada del cluster.
     </li>
 </ul>   
 
-<p><strong>Note:</strong> for this guide  we will install one proxy node which runs the swift-proxy-server processes and three storage nodes 
-    that run the swift-account-server, swift-container-server, and swift-object-server processes which control storage of the account databases, 
-    the container databases, as well as the actual stored objects.
-</p>
+<p><strong>Nota:</strong> En esta  gu&iacute;a instalaremos un proxy node el cual ejecuta los procesos swift-proxy-server y 3
+    storage nodes  que ejecutan los procesos swift-account-server, swift-container-server y swift-object-server </p>
 
-<p> Edit /etc/hosts in all nodes (controller, block1 , storage1...)
+<p> Editar el archivo  /etc/hosts en todos los nodos de Open stack (controller, block1 , storage1...)
 
 </p>
 
@@ -99,11 +106,11 @@ It includes the following components:
     192.168.0.16    storage3
 </pre>
 
-<p>Edit /etc/hostname and set hostname to swift-proxy, storage1, storage2, storage3
+<p>Editar /etc/hostname y definir hostname en swift-proxy, storage1, storage2, storage3
 </p>
 
-<h4>General Installation steps</h4>
-<p> Add Open Stack repositories</p>
+<h4>Pasos generales de instalci&oacute;n</h4>
+<p> Agregar repositorios de Open Stack</p>
 
 <pre>
    # apt-get install python-software-properties
@@ -113,8 +120,8 @@ It includes the following components:
 </pre>
 
 <p>
-Create a swift user that the Object Storage Service can use to authenticate with the Identity Service.
-Execute the next commands in the controller node:
+Crear un usuario swift que el Object Storage Service utilizar&aacute; para autenticarse en  Identity Service.
+Ejecutar los siguientes comandos en el nodo controller:
 </p>
 
 <pre>
@@ -127,14 +134,14 @@ Execute the next commands in the controller node:
     +----------+----------------------------------+
     |  email   |        swift@example.com         |
     | enabled  |               True               |
-    |    id    | b64f304b791d485ea960d8a0296bb63d |
+    |    id    | b64f304b7dad485ea960dfa0296bb63d |
     |   name   |              swift               |
     +----------+----------------------------------+
 
 </pre>
 
 <p>
-   Create a service entry for the Object Storage Service: 
+    Crear una entrada de servico para el Object Storage Service: 
 </p>
 
 <pre>
@@ -153,7 +160,7 @@ Execute the next commands in the controller node:
 </pre>
 
 <p>
-Specify an API endpoint for the Object Storage Service by using the returned service ID. 
+Definir un API endpoint para el Object Storage Service usando el id retornado en el comando anterior. 
 </p>
 
 <pre>
@@ -177,7 +184,7 @@ Specify an API endpoint for the Object Storage Service by using the returned ser
 </pre>
 
 <p>
-   Create the configuration directory on all swift nodes: 
+    Crear archivo de configuraci&oacute;n en todos los nodos swift:
 </p>
 
 <pre>
@@ -185,7 +192,7 @@ Specify an API endpoint for the Object Storage Service by using the returned ser
 </pre>
 
 <p>
-Create /etc/swift/swift.conf on all nodes:
+Crear /etc/swift/swift.conf en todos los nodos:
 </p>
 
 <pre>
@@ -195,19 +202,21 @@ Create /etc/swift/swift.conf on all nodes:
 </pre>
 
 <p>
-    <strong>Note:</strong> The suffix value in /etc/swift/swift.conf should be set to some random string of text to be used as a salt when hashing to determine mappings in the ring. This file must be the same on every node in the cluster! 
+    <strong>Nota:</strong> El sufijo en /etc/swift/swift.conf debe ser una cadena aleatoria
+    que sera usada como  salt al construir el  hash  para determinar los mapeos en el anillo. Este valor debe ser igual en todos los nodos del cluster 
 </p>
 
-<h4>Install and configure Storage nodes</h4>
+<h4>Instalar y configurar Storage nodes</h4>
 
-<p>Install Storage node packages:</p>
+<p>Instalar paquetes Storage node:</p>
 
 <pre>
    # apt-get install swift swift-account swift-container swift-object xfsprogs 
 </pre>
 
 <p>
-For each device on the node that you want to use for storage, set up the XFS volume (/dev/sdb is used as an example). Use a single partition per drive. 
+Para cada dispositivo que se quiera usar para almacenamiento, definir volumen XFS  (/dev/sdb es usado como ejemplo). Usar una sola partici&oacute;n por
+disco.
 </p>
 
 <pre>
@@ -221,7 +230,7 @@ For each device on the node that you want to use for storage, set up the XFS vol
 
 
 <p>
-    Create /etc/rsyncd.conf:
+    Crear /etc/rsyncd.conf:
 </p>
 
 <pre>
@@ -251,7 +260,7 @@ For each device on the node that you want to use for storage, set up the XFS vol
 </pre>
 
 <p>
-    Edit the following line in /etc/default/rsync:
+    Editar la siguiente l&iacute;nea en /etc/default/rsync:
 </p>
 
 <pre>
@@ -259,7 +268,7 @@ For each device on the node that you want to use for storage, set up the XFS vol
 </pre>
 
 <p>
-Start the rsync service:
+Iniciar el servicio rsync:
 </p>
 
 <pre>
@@ -269,41 +278,42 @@ Start the rsync service:
 
 </pre>
 
-<h4>Install and configure the proxy node</h4>
+<h4>Instalar and configurar proxy node</h4>
 
 <p>
-   The proxy server takes each request and looks up locations for the account, container, or object and routes the requests correctly. The proxy server also handles API requests. You enable account management by configuring it in the /etc/swift/proxy-server.conf file. 
+  El proxy server toma cada petici&oacute;n y la redirecciona al servicio apropiado  (account, container,object) . 
+  El proxy server igualmente gestiona las peticiones API. El servicio se habilita y configura en  el archivo /etc/swift/proxy-server.conf. 
 </p>
 
-<p>Install swift-proxy service:</p>
+<p>Instalar servicio swift-proxy:</p>
 
 <pre>
    # apt-get install swift-proxy memcached python-keystoneclient python-swiftclient python-webob 
 </pre>
 
 <p>
-Modify memcached to listen on the default interface on a local, non-public network. Edit this line in the /etc/memcached.conf file: 
-change 
+Modificar memcached para escuchar en la red local privada. Editar esta l&iacute;nea en el archivo  /etc/memcached.conf : 
+cambiar 
 </p>
 
 <pre>
    -l 127.0.0.1 
 </pre>
 
-<p> to:</p>
+<p> por:</p>
 
 <pre>
    -l PROXY_LOCAL_NET_IP 
 </pre>
 
-<p>Restart the memcached service:</p>
+<p>Reiniciar el servicio memcached:</p>
 
 <pre>
    # service memcached restart 
 </pre>
 
 <p>
-Create /etc/swift/proxy-server.conf:
+Crear /etc/swift/proxy-server.conf:
 </p>
 
 <pre>
@@ -356,7 +366,9 @@ Create /etc/swift/proxy-server.conf:
 
 
 <p>
-   Create the account, container, and object rings. The builder command creates a builder file with a few parameters. The parameter with the value of 18 represents 2 ^ 18th, the value that the partition is sized to. 
+   Crear los anillos account, container y object. The comando builder crea un archivo builder con unos cuantos parametros.
+   
+    The parameter with the value of 18 represents 2 ^ 18th, the value that the partition is sized to. 
    Set this “partition power” value based on the total amount of storage you expect your entire ring to use. The value 3 represents the number of replicas of each object, with the last value being the number of hours to restrict moving a partition more than once. 
 </p>
 
