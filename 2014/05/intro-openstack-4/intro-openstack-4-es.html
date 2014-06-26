@@ -367,9 +367,7 @@ Crear /etc/swift/proxy-server.conf:
 
 <p>
    Crear los anillos account, container y object. The comando builder crea un archivo builder con unos cuantos parametros.
-   
-    The parameter with the value of 18 represents 2 ^ 18th, the value that the partition is sized to. 
-   Set this “partition power” value based on the total amount of storage you expect your entire ring to use. The value 3 represents the number of replicas of each object, with the last value being the number of hours to restrict moving a partition more than once. 
+ 
 </p>
 
 <pre>
@@ -380,7 +378,15 @@ Crear /etc/swift/proxy-server.conf:
 </pre>
 
 <p>
-For every storage device on each node add entries to each ring:
+
+El parametro con el valor 18 representa  2 ^ 18t y es el valor del tama&ntilde;o the la particion.
+Este valor debe ser definido teniendo en cuenta el monto total de almacenamiento que se espera usar
+en el anillo. El valor 3 representa el n&uacute;mero de replicas de cada objeto, el ultimo valor representa
+el n&uacute;mero de horas restringidas antes de mover una partici&oacute;n m&aacute; de una vez.
+</p>
+
+<p>
+Para cada dispositvio de almacenamiento en cada nodo agregar a cada anillo:
 </p>
 
 <pre>
@@ -392,8 +398,10 @@ For every storage device on each node add entries to each ring:
 
 
 <p>
-  In this guide. every storage node has a partition in Zone 1 . Their  IP adress are 192.168.0.14, 192.168.0.15 and 192.168.0.16 without replication network. 
-  The mount point of this partition is /srv/node/sdb1, and the path in /etc/rsyncd.conf is /srv/node/, the DEVICE would be sdb1 and the commands are: 
+ En esta gu&iacute;a, cada nodo de almacenamiento tiene una particion en la zona 1, sus direcciones IP
+ son 192.168.0.14, 192.168.0.15 and 192.168.0.16 sin red de replicaci&oacute;n. 
+ El punto de montaje de cada partici&oacute;n es /srv/node/sdb1, y la ruta en 
+ /etc/rsyncd.conf es /srv/node/, the DEVICE would be sdb1 and the commands are: 
 </p>
 
 <pre>
@@ -412,7 +420,7 @@ For every storage device on each node add entries to each ring:
 </pre>
 
 <p>
-Verify the ring contents for each ring:
+Verificar el contenido de los anillos ring:
 </p>
 
 <pre>
@@ -431,7 +439,7 @@ Verify the ring contents for each ring:
 </pre>
 
 <p>
-   Rebalance the rings: 
+   Rebalancear anillos: 
 </p>
 
 <pre>
@@ -441,11 +449,12 @@ Verify the ring contents for each ring:
 </pre>
 
 <p>
-Copy the account.ring.gz, container.ring.gz, and object.ring.gz files to each of the Proxy and Storage nodes in /etc/swift.
+Copiar los archivos account.ring.gz, container.ring.gz, y object.ring.gz al proxy y a cada
+nodo de almacenamiento en el directorio /etc/swift.
 </p>
 
 <p>
-    Make sure the swift user owns all configuration files:
+    Asegurar que el usuario swift es el due&ntilde;o de los archivos de configuraci&oacute;n:
 </p>
 
 <pre>
@@ -453,24 +462,25 @@ Copy the account.ring.gz, container.ring.gz, and object.ring.gz files to each of
 </pre>
 
 
-<p>Restart service: </p>
+<p>Reiniciar el  servicio: </p>
 <pre>
     #service swift-proxy stop
     #service swift-proxy start 
 </pre>
 
 <p>
-Start services on the storage nodes
+Iniciar el servicio en los nodos de almacenamiento
 </p>
 
 <pre>
     # swift-init all start
 </pre>
 
-<h4> Verify the installation </h4>
+<h4> Verificar la instalaci&oacute;n </h4>
 
 <p>
-You can run these commands from the proxy server or any server that has access to the Identity Service. 
+Ejecutar el siguiente comando desde el proyx server:
+ 
 </p>
 
 
@@ -488,7 +498,7 @@ X-Put-Timestamp: 1402842465.82440
 
 
 <p>
-    Create and upload a test.txt file
+     crear y subir  un archivo  test.txt
 </p>
 
 

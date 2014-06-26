@@ -356,8 +356,7 @@ Create /etc/swift/proxy-server.conf:
 
 
 <p>
-   Create the account, container, and object rings. The builder command creates a builder file with a few parameters. The parameter with the value of 18 represents 2 ^ 18th, the value that the partition is sized to. 
-   Set this “partition power” value based on the total amount of storage you expect your entire ring to use. The value 3 represents the number of replicas of each object, with the last value being the number of hours to restrict moving a partition more than once. 
+   Create the account, container, and object rings. The builder command creates a builder file with a few parameters.  
 </p>
 
 <pre>
@@ -366,6 +365,11 @@ Create /etc/swift/proxy-server.conf:
     # swift-ring-builder container.builder create 18 3 1
     # swift-ring-builder object.builder create 18 3 1 
 </pre>
+
+<p>
+The parameter with the value of 18 represents 2 ^ 18th, the value that the partition is sized to. 
+   Set this “partition power” value based on the total amount of storage you expect your entire ring to use. The value 3 represents the number of replicas of each object, with the last value being the number of hours to restrict moving a partition more than once.
+</p>
 
 <p>
 For every storage device on each node add entries to each ring:
