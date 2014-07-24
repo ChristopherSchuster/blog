@@ -1,0 +1,355 @@
+<p>Chef is a systems and cloud infrastructure automation framework that makes it easy to deploy servers and applications to any physical, 
+    virtual, or cloud location. This guide is a simple introduction of the key concepts of chef. <a href="http://docs.opscode.com/">Extensive documentation can be found at this link</a>
+</p>
+
+<h2>Chef Components </h2>
+
+<h3>Nodes</h3>
+
+<p>
+  A node is any physical, virtual, or cloud machine that is configured to be maintained by a chef-client.
+</p>
+
+<h3>Workstations</h3>
+
+<p>
+    A workstation is a computer that is configured to run Knife, to synchronize with the chef-repo, and interact with a single Chef server.
+    Common task developed on a workstation are:
+</p>
+
+<ul>
+    <li>
+      Developing cookbooks and recipes.
+    </li>
+    <li>
+      Keeping the chef-repo synchronized with version source control.
+    </li>
+    <li>
+      Using Knife to upload items from the chef-repo to the Chef server.
+    </li>
+    <li>
+      Configuring organizational policy, including defining roles and environments and ensuring that critical data is stored in data bags.
+    </li>
+    <li>
+      Interacting with nodes.
+    </li>
+</ul>
+
+<h3>Knife </h3>
+<p>
+  Knife is a command-line tool that provides an interface between a local chef-repo and the Chef server. Knife helps users to manage:
+</p>
+
+<ul>
+    <li>Nodes.</li>
+    <li>Cookbooks and recipes.</li>
+    <li>Roles.</li>
+    <li>Stores of JSON data (data bags), including encrypted data.</li>
+    <li>Environments.</li>
+    <li>Cloud resources, including provisioning.</li>
+    <li>The installation of the chef-client on management workstations.</li>
+    <li>Searching of indexed data on the Chef server.</li>
+</ul>
+
+<h3>Repository</h3>
+<p>
+    The chef-repo is the location in which the following data objects are stored:
+</p>
+
+<ul>
+  <li>Cookbooks (including recipes, versions, cookbook attributes, resources, providers, libraries, and templates).</li>
+  <li>Roles.</li>
+  <li>Data bags.</li>
+  <li>Environments.</li>
+  <li>Configuration files (for clients, workstations, and servers).</li>
+</ul>
+
+<h3>The Hosted Server</h3>
+
+<p>
+  The Chef server stores cookbooks, the policies that are applied to nodes, and metadata that describes each registered node that is being managed by the chef-client.
+  Nodes use the chef-client to ask the Chef server for configuration details, such as recipes, templates, and file distributions.
+  The chef-client then does as much of the configuration work as possible on the nodes themselves (and not on the Chef server).
+</p>
+
+<h3>Cookbooks</h3>
+<p>
+A cookbook is the fundamental unit of configuration and policy distribution. Each cookbook defines a scenario and contains all of the components that are required to 
+support that scenario, including:
+</p>
+
+<ul>
+  <li>Attribute values that are set on nodes.</li>
+  <li>Definitions that allow the creation of reusable collections of resources.</li>
+  <li>File distributions.</li>
+  <li>Libraries that extend the chef-client and/or provide helpers to Ruby code.</li>
+  <li>Recipes that specify which resources to manage and the order in which those resources will be applied.</li>
+  <li>Custom resources and providers.</li>
+  <li>Templates.</li>
+  <li>Versions.</li>
+  <li>Metadata about recipes (including dependencies), version constraints, supported platforms, and so on.</li>
+</ul>
+
+<H2>Chef Example</H2>
+
+<p>
+   In this we use Linux Centos 6.5 as chef server. We well configure an ubuntu server as workstation and then we will deploy a Postgresql server on another ubuntu.
+</p>
+
+<h3>Basic Network Configuration</h3>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Hostname</th>
+            <th>ip</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>chef-server</td>
+            <td>10.0.0.10</td>
+        </tr>
+        <tr>
+            <td>station1</td>
+            <td>10.0.0.20</td>
+        </tr>
+        <tr>
+            <td>db-node</td>
+            <td>10.0.0.30</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>Chef Server Installation</h3>
+<p>
+ Go to <a href="http://www.getchef.com/chef/install/">http://www.getchef.com/chef/install/ </a>. Select the platform, and version. Download the rpm file and install it.
+</p>
+
+<pre>
+  $wget    https://opscode-omnibus-packages.s3.amazonaws.com/el/6/x86_64/chef-server-11.1.3-1.el6.x86_64.rpm
+  $sudo rpm -Uvh chef-server-11.1.3-1.el6.x86_64.rpm
+</pre>
+
+<p>Configure server</p>
+
+<pre>
+ $sudo chef-server-ctl reconfigure
+</pre>
+
+<h3>Chef workstation Installation</h3>
+<p>
+ Go to <a href="http://www.getchef.com/chef/install/">http://www.getchef.com/chef/install/ </a>. Select download chef-client, choose the platform and version. 
+ Follow the instructions.
+</p>
+
+<pre>
+  $curl -L https://www.opscode.com/chef/install.sh | sudo bash  
+</pre>
+
+<p>
+    Verify installation:
+</p>
+
+<pre>
+    $chef-client -v
+    
+</pre>
+
+<h4>Setting up the chef Repo</h4>
+<h5> Install git</h5>
+
+<pre>
+    $sudo apt-get install git
+</pre>
+
+<h5> Clone chef Repo</h5>
+<pre>
+  $git clone git://github.com/opscode/chef-repo.git  
+</pre>
+
+<h5> Create .chef Directory </h5>
+
+<p>
+ The .chef directory is used to store three files:  <strong>knife.rb</strong>, <strong>ORGANIZATION-validator.pem</strong> and <strong>USER.pem</strong>.
+
+</p>
+<p>
+Where ORGANIZATION and USER represent strings that are unique to each organization. These files must be present in the .chef directory in order for a workstation to be able to connect to a Chef server. <br>
+To create the .chef directory:
+</p>
+
+<pre>
+  $sudo mkdir -p ~/chef-repo/.chef  
+</pre>
+
+<p>
+Add .chef to the .gitignore file to prevent uploading the contents of the .chef folder to github. For example:
+</p>
+<pre>
+ $echo '.chef' >> ~/chef-repo/.gitignore
+</pre>
+
+<h5>Get Config Files</h5>
+
+<p>
+    Copy the files /etc/chef-server/chef-validator.pem /etc/chef-server/admin.pem from chef-server to station1 on a secure location and execute the command 
+    <code>knife configure --initial </code>. this command will ask for the chef-validator.pem file location.
+</p>
+
+<pre>
+    $ knife configure --initial
+    Overwrite /home/manuel/.chef/knife.rb? (Y/N)y
+    Please enter the chef server URL: [https://station1:443] https://chef-server:443
+    Please enter a name for the new user: [manuel] 
+    Please enter the existing admin name: [admin] 
+    Please enter the location of the existing admin's private key: [/etc/chef-server/admin.pem] 
+    Please enter the validation clientname: [chef-validator] 
+    Please enter the location of the validation key: [/etc/chef-server/chef-validator.pem] 
+    Please enter the path to a chef repository (or leave blank): 
+    Creating initial API user...
+    Please enter a password for the new user: 
+    Created user[manuel]
+    Configuration file written to /home/manuel/.chef/knife.rb
+    
+</pre>
+
+<h5>Add Ruby to the $PATH environment variable</h5>
+
+<pre>
+    $echo 'export PATH="/opt/chef/embedded/bin:$PATH"' >> ~/.bash_profile && source ~/.bash_profile
+    
+</pre>
+
+<h5>Verify the chef-client install</h5>
+
+<pre>
+    cd ~/chef-repo
+    knife client list
+    
+</pre>
+
+<h3>  Bootstrap a Node </h3>
+
+<p>
+    A node is any physical, virtual, or cloud machine that is configured to be maintained by a chef-client. 
+    There are two ways to install the chef-client on a node so that it may be maintained by the chef-client:
+</p>
+
+<ul>
+    <li>Use the knife bootstrap subcommand to bootstrap a node using the omnibus installer.</li>
+    <li>Use an unattended install to bootstrap a node from itself, without using SSH.</li>
+</ul>
+
+<p>
+    <strong> This post will cover the knife bootstrap install opion</strong>
+</p>
+
+<p>
+    The knife bootstrap command is a common way to install the chef-client on a node. The default for this approach assumes that node can access the
+    Chef website so that it may download the chef-client package from that location.
+</p>
+
+<p>In this post we will bootsrap an ubuntu and setup a c compiler.  </p>
+
+<h4> Run the bootstrap command </h4>
+<p>
+The knife bootstrap command is used to SSH into the target machine, and then do what is needed to allow the chef-client to run on the node. 
+It will install the chef-client executable (if necessary), generate keys, and register the node with the Chef server. To setup the chef node
+execute the next command:
+</p>
+
+<pre>
+    $ knife bootstrap db-node -x username -P password --sudo
+</pre>
+
+
+<p>Verify the installation:
+</p>
+
+<pre>
+    $knife client show db-node
+</pre>
+
+<h3>Opscode C compilere Cookbook </h3>
+
+<p>
+    <a href="https://github.com/opscode-cookbooks/build-essential"> Opscode Build Essential </a> is a github repository created by opscode team 
+    that provides out of the box c compiler provisioning.
+    the first step is clone the cookbook and dependences repos on the workstation:
+</p>
+
+<pre>
+    $mkdir ~/cookbooks
+    $cd ~/cookbooks
+    $git clone https://github.com/opscode-cookbooks/apt.git
+    $git clone https://github.com/opscode-cookbooks/build-essential.git
+    $git clone https://github.com/opscode-cookbooks/openssl.git
+    $git clone https://github.com/sethvargo/chef-sugar.git
+</pre>
+
+<p>
+    edit .chef/knife.rb and add the location of the cookbooks folder:
+</p>
+
+<pre>
+  cookbook_path  ['/home/manuel/chef-repo/cookbooks/', '/home/manuel/cookbooks']
+</pre>
+
+<p>Upload cookbooks to the chef-server:
+</p>
+
+<pre>
+    $knife cookbook upload apt
+    $knife cookbook upload build-essential
+    $knife cookbook upload chef-sugar
+    $knife cookbook upload openssl
+</pre>
+
+<h4>Adding a recipe to the node run_list </h4>
+
+<p>We will add the c compiler recipe build-essential to the node:
+</p>
+
+<pre>
+    $knife node run_list add  db-node  recipe[build-essential::default]
+    db-node:
+      run_list: recipe[build-essential::default]
+
+    $knife node show db-node
+
+</pre>
+
+<p>
+    After that we must login db-node to run the updated run-list, first at all, we will check that the system
+    doesn't have installed the c compiler:
+</p>
+
+<pre>
+    $ gcc
+    The program 'gcc' is currently not installed. You can install it by typing:
+    sudo apt-get install gcc
+</pre>
+
+<p>
+Now we can execute chef-client command that will connect to chef server and update node state:
+</p>
+
+<pre>
+    $sudo chef-client
+</pre>
+
+
+
+<p>After the execution we can check if the c compier was installed:</p>
+
+<pre>
+    $gcc -v
+    Using built-in specs.
+    COLLECT_GCC=gcc
+    COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/4.8/lto-wrapper
+    Target: x86_64-linux-gnu
+    Configured with: ../src/configure -v --with-pkgversion='Ubuntu 4.8.2-19ubuntu1' --with-bugurl=file:///usr/share/doc/gcc-4.8/README.Bugs --enable-languages=c,c++,java,go,d,fortran,objc,obj-c++ --prefix=/usr --program-suffix=-4.8 --enable-shared --enable-linker-build-id --libexecdir=/usr/lib --without-included-gettext --enable-threads=posix --with-gxx-include-dir=/usr/include/c++/4.8 --libdir=/usr/lib --enable-nls --with-sysroot=/ --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --enable-gnu-unique-object --disable-libmudflap --enable-plugin --with-system-zlib --disable-browser-plugin --enable-java-awt=gtk --enable-gtk-cairo --with-java-home=/usr/lib/jvm/java-1.5.0-gcj-4.8-amd64/jre --enable-java-home --with-jvm-root-dir=/usr/lib/jvm/java-1.5.0-gcj-4.8-amd64 --with-jvm-jar-dir=/usr/lib/jvm-exports/java-1.5.0-gcj-4.8-amd64 --with-arch-directory=amd64 --with-ecj-jar=/usr/share/java/eclipse-ecj.jar --enable-objc-gc --enable-multiarch --disable-werror --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --with-tune=generic --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu
+    Thread model: posix
+    gcc version 4.8.2 (Ubuntu 4.8.2-19ubuntu1)
+</pre>
