@@ -1,34 +1,35 @@
 <p>
-    <a href="http://www.vagrantup.com/"> Vagrant </a> is an open source tool for virtual development enviroments. In this guide we will
-    create an Ubuntu Virtual machine for django development that will be provisioned with <a href="http://www.maigfrga.ntweb.co/introduccion-chef-server/"> chef</a>
+    <a href="http://www.vagrantup.com/"> Vagrant </a> es una herramienta de software libre para crear
+    entornos virtuales de desarrollo. En esta gu&iacute;a crearemos una m&aacute;quina virtual Ubuntu para 
+    desarrollo django y la provisionaremos con   <a href="http://www.maigfrga.ntweb.co/introduccion-chef-server/"> chef</a>
 </p>
 
-<h3> VirtualBox Instalation</h3>
+<h3> Instalar VirtualBox</h3>
 <p>
-    Prefered virtualization system for vagrant is VirtualBox. It works with another virtualizations tools, you can refer oficial documentation for more
-    information. If you don't have already Virtualbox installed at your local box you can install the package using your package manager:
+    Vagrant soporta diversos sistemas de virtualizaci&oacute;n. El recomendado es virtualbox, se puede instalar mediante el 
+    gestor de paquetes de la distribuci&oacute;n de Ubuntu:
 </p>
 
 <pre>
     $sudo apt-get install virtualbox
 </pre>
 
-<h3> Installing Vagrant </h3>
-<p>My sugestion is not install from package manager, vagrant is a tool that release new version very quickly and always is better get the last version
-    for the oficial website. So go to <a href="http://www.vagrantup.com/downloads.html"> http://www.vagrantup.com/downloads.html </a>. Choose the version
-    for your system, download it and install it, in my case, i use ubuntu 64 bits:
+<h3> Instalando Vagrant </h3>
+<p>Es recomendable instalar la &uacute;ltima versi&oacute;n de su web. Las versiones del gestor de paquetes frecuentemente estan desactualizadas.
+   Para instalar la &uacute;ltima versi&oacute;n ir a
+  <a href="http://www.vagrantup.com/downloads.html"> http://www.vagrantup.com/downloads.html </a>. Seleccionar la versi&oacute;n para tu
+  sistema, descargarla e instarla, en mi caso, Ubuntu 64 bits:
 </p>
 <pre>
   $sudo dpkg -i vagrant_1.6.3_x86_64.deb  
 </pre>
 
-<h3> Adding a box </h3>
+<h3>  Agregando un box </h3>
 
 <p>
-    Before create an enviroment you need install in your local machine a vagrant box.
-    You can browse <a href="https://vagrantcloud.com/"> Vagrant's Cloud website </a> to find more boxes. For this
-    post we will use an Ubuntu box:
-</p>
+    Antes de empezar a crear un entorno de desarrollo es necesario descargar e instalar una m&aacute;quina base (vagran box).
+    La web <a href="https://vagrantcloud.com/"> Vagrant's Cloud e </a> contiene un listado actualizado de boxes</p>. En este post
+    usaremos un box ubuntu:
 
 <pre>
     $ vagrant box add hashicorp/precise64
@@ -59,10 +60,9 @@
 </pre>
 
 
-<h3>Create an Ubuntu box Development Environment </h3>
+<h3>Crear un entorno de desarrollo django en Ubuntu </h3>
 <p>
-    You can create a new box in seconds with the command <code> vagrant init</code> and then tell vagrant what kind of 
-    box do you want.
+    Se puede crear una nueva m&aquina en segundos con el comando <code> vagrant init</code>
 </p>
 <pre>
     $vagrant init
@@ -73,9 +73,9 @@
     `vagrantup.com` for more information on using Vagrant.
 </pre>
 
-<p>This commands creats a file named Vagrantfile. We should edit this file in order to setup our virtualbox according of our needs, so the first
-
-step is tell vagrant that we want and ubuntu box editing this file, find the option  config.vm.box  and editing according the box you want:
+<p>Este comando crea un archivo llamado Vagrantfile. Debemos editarlo con el fin de configurar la m&aacute;quina de acuerdo a nuestras necesidades.
+Lo primero que tenemos que hacer es decirle a vagrant que queremos que esta m&aacute;quina sea Ubuntu, debemos buscar la opcion
+ config.vm.box  y editarla:
 
 </p>
 
@@ -84,7 +84,7 @@ step is tell vagrant that we want and ubuntu box editing this file, find the opt
 </pre>
 
 
-<h3> Up and SSh</h3>
+<h3> Levantar la m&aacute;quina y conectarse por SSh</h3>
 
 <pre>
     $vagrant up
@@ -141,7 +141,8 @@ local directory is and the second where will be synchronized on the local box:
 <h3>Provisioning </h3>
 
 <p>
-    Above the list of tools/frameworks/libraries that we need to install in order to setup a django dev box:
+    La siguiente lista contiene las herramientas/frameworks/librerias necesarias par aconfigurar un box para desarrollo
+    django:
 </p>
 
 <ul>
@@ -155,14 +156,15 @@ local directory is and the second where will be synchronized on the local box:
 
 
 <h4>Django vagrant chef</h4>
-<p> Chef is a systems and cloud infrastructure automation framework. You can find an introduction at this 
-    <a href="http://www.maigfrga.ntweb.co/introduccion-chef-server/"> link.</a>. We will use chef to provisioning our virtualbox, so everytime
-    that the machine starts, chef will be executed and if there is a change in the infraestructre, cheff will update our box automatically.
-    </p>
+<p> Chef es un framwork para automatizaci&oacute;n de infraestructuras en la nube. Puedes encontrar un post introductiorio  
+    <a href="http://www.maigfrga.ntweb.co/introduccion-chef-server/"> en este enlace.</a>. Usaremos chef para configurar
+    nuestra m&aacute;quina virtual, de esta forma, cada vez que iniciamos la m&aacute;quina chef se ejecutara y buscara por cambios
+    en configuraci&oacute;n e infraestructura, de existir cambios los aplicara automaticamente.
+   </p>
 
-<p> <a href="https://github.com/maigfrga/django-vagrant-chef"> Django vagrant chef </a> is a chef project that contains
- cookboks to  setup an ubuntu machine for django development with django/postgresql. 
-<a href="https://github.com/maigfrga/django-vagrant-chef/blob/master/README.md"> You can find the documentation here </a>
+<p> <a href="https://github.com/maigfrga/django-vagrant-chef"> Django vagrant chef </a> es un projecto de chef que contiene
+recetas para configurar una m&aacute;quina ubuntu para desarrollo django/postresql . 
+<a href="https://github.com/maigfrga/django-vagrant-chef/blob/master/README.md"> En este enlace la documentaci&oacute;n  </a>
 </p>
 
 <pre>
@@ -171,7 +173,7 @@ local directory is and the second where will be synchronized on the local box:
 
 </pre>
 
-<h5>Django vagrant chef Attributes</h5>
+<h5>Atributos Django vagrant chefs</h5>
 
 <p>Python attributes:</p>
 
@@ -190,13 +192,13 @@ local directory is and the second where will be synchronized on the local box:
 
 </pre>
 
-<p>Packages to be installed on the virtualenv</p>
+<p>Paquetes que seran instalados en  virtualenv</p>
 
 <pre>
 ['django']['python']['packages'] = ["ipdb", "http2"]
 </pre>
 
-<p>Django app details</p>
+<p>Django app</p>
 
 <pre>
     ['django']['app']['project_home'] = '/vagrant_data/project'
@@ -211,10 +213,10 @@ local directory is and the second where will be synchronized on the local box:
     ['supervisor']['inet_password'] = ''
 </pre>
 
-<h4> Configuring vagrant to use Django vagrant chef </h4>
+<h4> Configurando vagrant para usar Django vagrant chef </h4>
 
 <p>
-    Install omnibus plugin that find chef dependencies
+    Instalar plugin omnibus que busca dependencias chef
 </p>
 
 <pre>
@@ -223,7 +225,7 @@ local directory is and the second where will be synchronized on the local box:
 </pre>
 
 <p>
-    Edit Vagrantfile, setup the location of django-vagran-chef project, and tell vagrant which recipes should be executed:
+    Editar Vagrantfile, definir la ubicaci&oacute;n del proyecto  django-vagran-chef project:
 </p>
 
 <pre>
@@ -266,26 +268,26 @@ local directory is and the second where will be synchronized on the local box:
 <h3> Networking</h3>
 
 <p>
-    We will setup a custom ip address for the vagrant box and fordwar the port 80 from our localhost to the port 8080 where the django 
-    app is running at the vagrant box. <a href="http://docs.vagrantup.com/v2/networking/index.html"> All the docs about vagrant networking at this link</a>
+    Le asignaremos una ip privada a la m&aacute;quina para que la podamos acceder desde nuestro localhost.
+     <a href="http://docs.vagrantup.com/v2/networking/index.html">Documentaci&oacute;n vagrant networking</a>
 </p>
 
 
-<h4> Configuring a private network address</h4>
+<h4> Configurando una red privada </h4>
 
 <pre>
     config.vm.network "private_network", ip: "192.168.33.10"
 </pre>
 
-<h3>Reloading box</h3>
+<h3>Recargando la box</h3>
 <p>
-    Every time that you start the vagrant box with <code>vagrant up </code> command, configuration changes are applied, if the vagrant box is already up
-    you can reload configuration with <code> vagran reload --provision </code>
+    Cada vez que se inica la m&aacutequina con el comando
+    <code>vagrant up </code> , los cambios en configuraci&oacute;n son aplicados, si la m&aacute;quina esta arriba se puede
+    recargar la configuracion con el comando <code> vagran reload --provision </code>
 </p>
 
 
-
-<h3> References</h3>
+<h3> Referencias</h3>
 <ul>
     <li> Vagrant's website: <a href="http://www.vagrantup.com/">http://www.vagrantup.com/ </a>  </li>
 </ul>
