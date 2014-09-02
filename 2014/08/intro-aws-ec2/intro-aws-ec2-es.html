@@ -1,0 +1,388 @@
+<p> Amazon Web Services (AWS) es una colecci&oacute;n de servicios remotes que componen una plataforma de computo en la nube (Cloud Computing). 
+ Este servicio es ofrecido por amazon a trav&eacute;s de internet.  Este post es una introducci&oacute;n a servicio Amazon EC2.
+</p>
+
+<h2> Abrir una cuenta gratuita</h2>
+<p>
+    Este post asume la existencia de una cuenta amazon creada. Las instrucciones para hacerlo se encuentran en el video
+      <a  href="http://aws.amazon.com/getting-started/"> Crear una cuenta AWS </a>
+</p>
+
+<h2>Obteniendo claves de acceso</h2>
+<p>
+No es recomendable por motivos de seguridad usar las claved de acceso de la cuenta para crear recursos. Es recomendable crear otro par de claves
+que no tengan acceso a informaci&ooacute;n sensible como facturas, datos bancarios, direcciones, etc. El post
+<a href="http://docs.aws.amazon.com/IAM/latest/UserGuide/IAMBestPractices.html"> IAM Best Practices </a>  contiene una lista de buenas practicas para
+conservar la seguridad de nuestras cuentas.
+</p>
+
+<h3> Crear usuarios individuales IAM</h3>
+
+<p>
+    En el panel de control ir a users, hacer click en el bot&oacute;n <strong> Crear nuevos usuarios </strong>, escribir el nombre de usuario y 
+    hacer click en crear. Luego hacer click en descargar juevo de llaves y guardarlas en un lugar seguro.
+</p>
+
+<h2>Instalando y configurando Interfaz de l&iacute;nea de comandos para AWS </h2>
+<p>
+    AWS-cli es una herramienta l&iacute;nea de comandos escrita en python que se puede usar para interactuar con AWS. Como cualquier libreria python
+    puede instalarse via PIP</p>
+
+<pre>
+  pip install awscli
+</pre>
+
+<p>Comprobar si la instalaci&oacute; fue exitosa: </p>
+
+<pre>
+    aws help
+</pre>
+
+
+<h3> Configurando Interfaz de l&iacute;nea de comandos para AWS  </h3>
+
+<p>Se pueden definir variables de entorno  – AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY o ejecutar awscli configure:
+</p>
+
+<pre>
+    $aws configure
+
+    AWS Access Key ID [None]: IGMAOKYKYYLNEDIEYDF
+    AWS Secret Access Key [None]: ASDA=JSADFJJJ;Jj;kdfu=asdf
+    Default region name [None]: us-west-1
+    Default output format [None]: json
+</pre>
+
+
+
+<h2> Amazon Elastic Compute Cloud EC2 </h2>
+<p>
+  Un usuario puede crear y destruir bajo demanda uno o muchos servidores virtuales.
+  Recursos para una instancia como discos, interfaces de red, cpu, memoria pueden ser modificados
+  en cualquier momento haciendo posible implementar soluciones escalables a bajo costo. Toda la infraestructura f&iacute;sica
+  es adminsitrada por  Amazon, de esta manera el usuario no se tiene que preocupar por edificios, seguridad f&iacute;sica, manefso as user you don't 
+  have to take care of aspects as physical security, maintenance, etc.
+</p>
+<p>
+    El comando <code>aws  ec2 help </code> muestra las opciones disponibles para administrar instancias ec2.
+</p>
+
+<h3> Listtando Regiones EC2 </h3>
+
+<pre>
+  $ aws ec2 describe-regions
+
+
+    {
+        "Regions": [
+            {
+                "Endpoint": "ec2.eu-west-1.amazonaws.com", 
+                "RegionName": "eu-west-1"
+            }, 
+            {
+                "Endpoint": "ec2.sa-east-1.amazonaws.com", 
+                "RegionName": "sa-east-1"
+            }, 
+            {
+                "Endpoint": "ec2.us-east-1.amazonaws.com", 
+                "RegionName": "us-east-1"
+            }, 
+            {
+                "Endpoint": "ec2.ap-northeast-1.amazonaws.com", 
+                "RegionName": "ap-northeast-1"
+            }, 
+            {
+                "Endpoint": "ec2.us-west-2.amazonaws.com", 
+                "RegionName": "us-west-2"
+            }, 
+            {
+                "Endpoint": "ec2.us-west-1.amazonaws.com", 
+                "RegionName": "us-west-1"
+            }, 
+            {
+                "Endpoint": "ec2.ap-southeast-1.amazonaws.com", 
+                "RegionName": "ap-southeast-1"
+            }, 
+            {
+                "Endpoint": "ec2.ap-southeast-2.amazonaws.com", 
+                "RegionName": "ap-southeast-2"
+            }
+        ]
+    }  
+</pre>
+
+
+<h3> Grupos de Seguridad</h3>
+
+<p>
+    Un grupo de seguridad actgua como un  Firewall virtual que controla el acceso a una o mas instancias. Es posible definir reglas personalizadas para
+    una o m&aacute;s instancias y asociar uno o m&aacute;s usuarios a uno o  m&aacute;s grupos de seguridad . 
+</p>
+
+<h4> Listando grupos de seguridad </h4>
+
+<p>
+El comando  <code>aws ec2 describe-security-groups </code> muestra un listado de los grupos de seguridad:
+</p>
+
+<pre>
+
+  $ aws ec2 describe-security-groups
+    {
+        "SecurityGroups": [
+            {
+                "IpPermissionsEgress": [
+                    {
+                        "IpProtocol": "-1", 
+                        "IpRanges": [
+                            {
+                                "CidrIp": "0.0.0.0/0"
+                            }
+                        ], 
+                        "UserIdGroupPairs": []
+                    }
+                ], 
+                "Description": "default VPC security group", 
+                "IpPermissions": [
+                    {
+                        "IpProtocol": "-1", 
+                        "IpRanges": [], 
+                        "UserIdGroupPairs": [
+                            {
+                                "UserId": "495087967", 
+                                "GroupId": "sg-85u5mch"
+                            }
+                        ]
+                    }
+                ], 
+                "GroupName": "default", 
+                "VpcId": "vpc-34985c", 
+                "OwnerId": "098765454", 
+                "GroupId": "sg-adfa3545"
+            }
+        ]
+    }  
+
+
+</pre>
+
+<h4> Creando grupos de seguirdad </h4>
+<p>
+   Crearemos un grupo de seguridad  <em> security_test</em> usando el comandoto do that we use the command <code> aws ec2 create-security-group</code>
+</p>
+
+
+<pre>
+    $ aws ec2 create-security-group --group-nam "security_test" --description "Security test for blog"
+
+    {
+        "return": "true", 
+        "GroupId": "sg-fdasd"
+    }
+</pre>
+
+<h4> Autorizando acceso ssh access a grupos </h4>
+<p>
+Para acceder mediante ssh a instancias es necesario garantizar acceso al grupo(s) de seguridad asociado(s) a las instancia(s)
+usando el comando  <code> aws ec2 authorize-security-group-ingress </code>
+</p>
+
+<pre>
+     $aws ec2 authorize-security-group-ingress --group-name security_test --protocol tcp --port 22 --cidr 0.0.0.0/0
+
+  {
+    "return": "true"
+  }
+
+</pre>
+
+<p>
+    <strong> Nota:</strong> la direcci&ooacute;n 0.0.0.0/0 puede ser usada por poco tiempo para pruebas, pero inaceptable en producci&oacute;n por
+    movitos de seguridad.
+</p>
+
+
+<h3>SSH keypair </h3>
+<p>
+    Un par de llaves es requido para acceder via ssh a las instancias, se puede crear con el comando <code>  aws ec2 create-key-pair</code>
+</p>
+
+<pre>
+    $aws ec2 create-key-pair --key-name manuel_dev_key --query 'KeyMaterial' --output text > manuel_key.pem
+
+</pre>
+
+<h3> Amazon Machine Images (AMIs) </h3>
+
+<p>
+    AnaA MI es una plantilla que contiene configuraci&oacute;n de software(Sistema operativo, aplicaciones, red, etc). A partir de una AIM 
+    se pueden crear instancias que son copias en ejecuci&oacute;n de esta plantilla . Por cada AMI pueden ser creadas una o 
+    m&aacute;s instancias.
+</p>
+
+
+<h4>Amazon Linux AMIs </h4>
+
+<p>
+    Amazon Linux es una variante de linux Linux  similar a Red Hat/ CentOs  con la ventaja que es desarrollada y mantenida por Amazon
+    lo cual tiene una serie de beneficios:
+</p>
+
+<ul>
+    <li> Actualizaciones de seguirdad por  Amazon</li>
+    <li> Drivers optimizados para AWS</li>
+    <li> Soporte </li>
+</ul>
+
+<p>
+Para este post usaremos  una  AMI <strong> ami-a8d3d4ed </strong> la cual esta disponible para la region  us-west-1 . En el siguiente
+enlace se puede encontrar una lista  <a href="http://aws.amazon.com/amazon-linux-ami/"> Amazon Linux AMIs por region </a>.
+
+</p>
+<p>
+    Puede ver la lista de ami usando el comando  <code>   aws ec2 describe-images   </code> :
+</p>
+
+<pre>
+  $aws ec2 describe-images --image-ids '["ami-a8d3d4ed"]'
+    {
+        "Images": [
+            {
+                "VirtualizationType": "paravirtual", 
+                "Name": "amzn-ami-pv-2014.03.2.x86_64-ebs", 
+                "Hypervisor": "xen", 
+                "ImageOwnerAlias": "amazon", 
+                "ImageId": "ami-a8d3d4ed", 
+                "RootDeviceType": "ebs", 
+                "State": "available", 
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1", 
+                        "Ebs": {
+                            "DeleteOnTermination": true, 
+                            "SnapshotId": "snap-d6bea21a", 
+                            "VolumeSize": 8, 
+                            "VolumeType": "standard", 
+                            "Encrypted": false
+                        }
+                    }
+                ], 
+                "Architecture": "x86_64", 
+                "ImageLocation": "amazon/amzn-ami-pv-2014.03.2.x86_64-ebs", 
+                "KernelId": "aki-880531cd", 
+                "OwnerId": "137112412989", 
+                "RootDeviceName": "/dev/sda1", 
+                "Public": true, 
+                "ImageType": "machine", 
+                "Description": "Amazon Linux AMI x86_64 PV EBS"
+            }
+        ]
+    }  
+
+
+</pre>
+
+
+<h3>Listando Instancias EC2 <h3>
+<p>
+    El siguiente comando muestra un listado de instancias por cuenta/usuario:
+</p>
+
+<pre>
+    $aws ec2 describe-instances
+
+    {
+        "Reservations": []
+    }  
+</pre>
+
+<p>
+   <strong> Nota:</strong> El listado esta vacio porque no hemos creado instancias a&uacute;n.
+</p>
+
+
+<h3> Creando isntancias EC2 </h3>
+
+<p>
+    El comando <code> aws ec2 run-instances </code> tiene muchos parametros , para arrancar una instancia se necesitan algunos parametros b&aacute;sicos :
+</p>
+
+<pre>
+  $aws ec2 run-instances --image-id ami-a8d3d4ed --instance-type t1.micro --key-name manuel_dev_key --security-groups security_test 
+</pre>
+
+<h3> Conectando instancias via ssh </h3>
+
+<p>
+   Ejecutar el comando   <code> aws ec2 describe-instance </code> para verificar la url p&uacute;blica en en valor  PublicDnsName . Es necesario
+   usar la clave creada anteriormente, el usuario es ec2-user
+</p>
+
+<pre>
+  ssh -i ./manuel_key.pem ec2-user@ec2-856-3632-56665-fdad.us-west-1.compute.amazonaws.com  
+
+    Last login: Sat Aug 30 16:15:27 2014 from xx.xxx
+
+       __|  __|_  )
+       _|  (     /   Amazon Linux AMI
+      ___|\___|___|
+
+</pre>
+
+
+<h3> Terminando una instancia  </h3>
+
+<p> El comando <code>aws ec2 terminate-instances   </code>  pasando como parametro el id de la instancia</p>
+
+<pre>
+
+  $ aws ec2 terminate-instances --instance-ids i-3f522861
+ 
+    {
+        "TerminatingInstances": [
+            {
+                "InstanceId": "i-3f522861", 
+                "CurrentState": {
+                    "Code": 32, 
+                    "Name": "shutting-down"
+                }, 
+                "PreviousState": {
+                    "Code": 16, 
+                    "Name": "running"
+                }
+            }
+        ]
+    }  
+
+</pre>
+
+
+
+
+
+<h2>Referencias </h2>
+
+<ul>
+    <li>
+         <a href="https://en.wikipedia.org/wiki/Amazon_Web_Services">Wikipedia</a>
+    </li>
+    <li>
+        <a href="http://docs.aws.amazon.com/gettingstarted/latest/awsgsg-intro/gsg-aws-intro.html"> Getting Started with AWS</a>
+    </li>
+    <li>
+        <a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts.html"> EC2  User Guide</a>
+    </li>
+    <li>
+        <a href="http://aws.amazon.com/amazon-linux-ami/"> Amazon Linux AMIs </a>
+    </li>
+    <li>
+        <a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html"> Amazon Security Groups</a>
+    </li>
+    <li>
+        <a href="http://docs.aws.amazon.com/cli/latest/userguide/cli-ec2-keypairs.html"> Using Key Pairs </a>
+    </li>
+    <li>
+        <a href="http://aws.amazon.com/s3/">Amazon S3</a>
+    </li>
+
+</ul>
