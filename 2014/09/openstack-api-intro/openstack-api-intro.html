@@ -1,0 +1,292 @@
+<p>OpenStack is a free and open-source software cloud computing software platform that can be accessed an managed through a restfull API.
+This post is an introduction to this API using a well known OpenStack implementation at <a href="http://www.rackspace.com/"> Rackspace </a>.
+</p>
+<p><strong> Prerequisites: </strong> You need to open a rackspace account  <a href="https://cart.rackspace.com/cloud/"> https://cart.rackspace.com/cloud/ </a>  
+</p>
+
+<h2> Generating API Keys</h2>
+<p>
+    First Thing we need to de is generate a valid key to access the API, to do that we must login to the control panel and
+<a href="http://www.rackspace.com/knowledge_center/article/rackspace-cloud-essentials-viewing-and-regenerating-your-api-key"> Follow this instructions</a>.
+</p>
+<p>
+    <strong> Note: </strong> for security reasons is recommended create a separate user only for API access and generate a key for this user.
+</p>
+
+<h2>Command Line Rackspace Nova API Client Tool</h2>
+
+<p>
+    Nova is the project name for OpenStack Compute. The command line tool is a python application that can be installed via pip:
+</p>
+
+<pre>
+  pip install rackspace-novaclient
+</pre>
+
+<p>You can check your installation running <code> nova help </code> command.</p>
+
+<h3>Configuring Nova API Client</h3>
+
+
+<p>
+    We need to define environment variables:
+</p>
+
+<pre>
+    export OS_AUTH_URL=https://identity.api.rackspacecloud.com/v2.0/
+    export OS_AUTH_SYSTEM=rackspace
+    export OS_REGION_NAME=DFW
+    export OS_USERNAME=<username>
+    export OS_TENANT_NAME=<tenant_id>
+    export NOVA_RAX_AUTH=1
+    export OS_PASSWORD=<api_key>
+    export OS_PROJECT_ID=<tenant_id>
+    export OS_NO_CACHE=1  
+</pre>
+
+<p>
+    <strong> Note: tenant_id is your account number</strong> <br>
+    Check if your configuration is correct:
+</p>
+
+<pre>
+    nova credentials
+</pre>
+
+<h2> OpenStack Flavors </h2>
+
+<p>
+  Virtual hardware templates are called "flavors" in OpenStack, defining sizes for RAM, disk, number of cores, and so on. To get a list of flavors
+  use the command <code>nova flavor-list</code>
+</p>
+
+<h2> OpenStack Images</h2>
+
+<p>
+A virtual machine image is a single file which contains a virtual disk that has a bootable operating system installed on it. To get a list of
+images run the command <code>nova image-list</code>
+</p>
+
+
+<h2>SSH keypair </h2>
+<p>
+    In order to access virtual machines  a ssh keypair is required, you can create one using the command <code> nova keypair-add keypairname</code>
+</p>
+
+<pre>
+    nova keypair-add key_test >> key_file.pem
+</pre>
+
+<h2> Managing Servers</h2>
+<h3> List Servers</h3>
+
+<p>We can use the command <code> nova list</code> to get a list of all the servers that we have, at the beginning this list will be empty.
+</p>
+
+<h3> Create a server</h3>
+<p>
+    We want to create  a 512MB Standard Instance (CODE 2) with Debian 7 Wheezy (CODE 06cbc0a2-a906-4e6a-8ed7-bd7c952c9f81). We will pass the ssh key as well
+    in order to grant ssh access:
+</p>
+
+<pre>
+    nova boot testServer --image 06cbc0a2-a906-4e6a-8ed7-bd7c952c9f81 --flavor 2 --key-name key_test
+</pre>
+
+<p>
+    The result of this operation include a server id, we can check the status of this server with the command <code> nova show server-id </code>
+    <br>At the beginning the server status is BUILD, that means that the server is being built. Run this command till the status change to 
+    ACTIVE , this can take some minutes.
+</p>
+
+<h3> SSH Access </h3>
+<p>
+    When the server change its status to ACTIVE you can access via ssh with the user root and public ip
+</p>
+<pre>
+    ssh root@public-ip -i yourkey.pem
+
+    Linux debian 3.2.0-4-amd64 #1 SMP Debian 3.2.60-1+deb7u3 x86_64
+
+    The programs included with the Debian GNU/Linux system are free software;
+    the exact distribution terms for each program are described in the
+    individual files in /usr/share/doc/*/copyright.
+
+    Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+    permitted by applicable law.
+    Last login: Thu Jan  1 00:00:10 1970
+    root@testserver:~# 
+</pre>
+<p>
+    <strong> Note: </strong> This server is insecure for default, if you have plans to follow this guide to deploy a production server you must configure
+    the security policies.
+</p>
+
+<h3> Securing your server </h3>
+
+<p> Change root password</p>
+<pre>
+    #passwd
+</pre>
+
+<p> Adding an admin user: </p>
+
+<pre>
+    #adduser admin
+</pre>
+
+
+<p>Add the user to the sudo group: </p>
+
+<pre>
+    # usermod -a -G sudo admin
+</pre>
+
+ <p> Update Apt </p>
+
+<pre>
+    #apt-get update
+    #apt-get upgrade
+</pre>
+
+<h4> SSH Config </h4>
+<p>
+Edit /etc/ssh/sshd_config  and change the next values :
+</p>
+
+<pre>
+
+  Port 9999
+  PermitRootLogin PermitRootLogin no
+  PasswordAuthentication no
+
+</pre>
+
+<h4> Firewall config</h4>
+<p>
+    By default, all ports are open in debian systems, to verify that you can use the <code> iptables</code> command:
+</p>
+
+<pre>
+    admin@testserver:~$ sudo iptables -L
+    Chain INPUT (policy ACCEPT)
+    target     prot opt source               destination         
+
+    Chain FORWARD (policy ACCEPT)
+    target     prot opt source               destination         
+
+    Chain OUTPUT (policy ACCEPT)
+    target     prot opt source               destination  
+</pre>
+
+<p>Grant access to ssh port: </p>
+<pre>
+  sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+  sudo iptables -I INPUT -p tcp --dport 9999 -m state --state NEW,ESTABLISHED -j ACCEPT  
+</pre>
+
+<p> Grant http (port 80) access </p>:
+<pre>
+ sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+</pre>
+
+<p>Reject any other external traffic </p>
+<pre>
+ sudo iptables -A INPUT -j DROP
+</pre>
+
+<p>
+    Allow internal traffic:
+</p>
+
+<pre>
+  iptables -I INPUT 1 -i lo -j ACCEPT  
+</pre>
+
+<p>
+    Verify iptables config:
+</p>
+
+<pre>
+    admin@testserver:~$ sudo iptables -L -v
+'
+'   Chain INPUT (policy ACCEPT 0 packets, 0 bytes)'    Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+    pkts bytes target     prot opt in     out     source               destination         
+       15  1148 ACCEPT     tcp  --  any    any     anywhere             anywhere             tcp dpt:9999 state NEW,ESTABLISHED
+        6   568 ACCEPT     tcp  --  any    any     anywhere             anywhere             tcp dpt:9999 state NEW,ESTABLISHED
+        0     0 ACCEPT     all  --  any    any     anywhere             anywhere             state RELATED,ESTABLISHED
+        0     0 ACCEPT     tcp  --  any    any     anywhere             anywhere             tcp dpt:http
+        1    44 DROP       all  --  any    any     anywhere             anywhere            
+
+    Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+     pkts bytes target     prot opt in     out     source               destination         
+
+    Chain OUTPUT (policy ACCEPT 3 packets, 348 bytes)
+     pkts bytes target     prot opt in     out     source               destination
+</pre>
+
+<p>
+  Save your rules to the iptables.rules file in the /etc directory  
+</p>
+
+<pre>
+    #iptables-save > /etc/iptables.rules
+</pre>
+
+<p>
+    Edit  or create the file /etc/network/if-pre-up.d/iptaload in order to  create a service that applies the rules at server start-up  and
+    add the following lines:
+</p>
+
+<pre>
+
+    #!/bin/sh
+    iptables-restore < /etc/iptables.rules
+    exit 0
+</pre>
+
+<p>
+    Give execution permit to the file:
+</p>
+
+<pre>
+  sudo chmod +x /etc/network/if-pre-up.d/iptaload
+</pre>
+
+<p> Restart the server and verify configuration with <code> sudo iptables -L   </code>  </p>
+
+<h2> References </h2>
+<ul>
+    <li> <a href="http://en.wikipedia.org/wiki/OpenStack">Wikipedia </li>
+    <li> <a href="http://docs.openstack.org/api/quick-start/content/">OpenStack API Quick Start</a>
+    <li> <a href="http://www.rackspace.com/knowledge_center/article/rackspace-cloud-essentials-viewing-and-regenerating-your-api-key"> Rackspace Cloud Essentials - Viewing and Regenerating Your API Key </a>
+    </li>
+    <li>
+      <a href="http://docs.openstack.org/developer/nova/">Openstack Nova documentation </a>
+    </li>
+    <li>
+        <a href="http://docs.rackspace.com/servers/api/v2/cs-gettingstarted/content/section_gs_install_nova.html">
+            Rackspace Nova Client
+        </a>
+    </li>
+    <li>
+        <a href="http://docs.openstack.org/openstack-ops/content/flavors.html">
+            OpenStack Flavors
+        </a>
+    </li>
+    <li>
+        <a href="http://docs.openstack.org/image-guide/content/ch_introduction.html">
+            OpenStack Images
+        </a>
+    </li>
+    <li>
+        <a href="http://docs.openstack.org/openstack-ops/content/security_groups.html">
+            OpenStack Security Groups
+        </a>
+    </li>
+    <li>
+        <a href="http://docs.rackspace.com/servers/api/v2/cs-gettingstarted/content/nova_create_server.html">
+           Create Your Server with the nova Client  
+        </a>
+    </li>
+</ul>
