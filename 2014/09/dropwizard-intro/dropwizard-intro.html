@@ -1,0 +1,268 @@
+create maven project
+
+
+mvn archetype:generate -DgroupId=com.notempo1320 \
+    -DartifactId=user-rest -DarchetypeArtifactId=maven-archetype-quickstart \
+    -DinteractiveMode=false
+
+
+Add a dropwizard.version property to your POM with the current version of Dropwizard (which is 0.7.0 at the moment of write this post)
+
+<properties>
+    <dropwizard.version>0.7.0</dropwizard.version>
+</properties>
+
+Add the dropwizard libraries as dependencies:
+  <dependencies>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>1.3.170</version>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard</groupId>
+      <artifactId>dropwizard-core</artifactId>
+      <version>${dropwizard.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard</groupId>
+      <artifactId>dropwizard-db</artifactId>
+      <version>${dropwizard.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard</groupId>
+      <artifactId>dropwizard-hibernate</artifactId>
+      <version>${dropwizard.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard</groupId>
+      <artifactId>dropwizard-auth</artifactId>
+      <version>${dropwizard.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard</groupId>
+      <artifactId>dropwizard-client</artifactId>
+      <version>${dropwizard.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard</groupId>
+      <artifactId>dropwizard-testing</artifactId>
+      <version>${dropwizard.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+
+
+Creating A Configuration Class
+
+
+<pre>
+    package com.notempo1320.configuration;
+
+
+    public class AppConfiguration extends io.dropwizard.Configuration {
+    }
+
+</pre>
+
+Creating An Application Class
+
+<pre>
+    package com.notempo1320;
+
+    import com.notempo1320.configuration.AppConfiguration;
+    import io.dropwizard.Application;
+    import io.dropwizard.setup.Bootstrap;
+    import io.dropwizard.setup.Environment;
+
+    public class App extends Application<AppConfiguration>
+    {
+
+        @Override
+        public void initialize(Bootstrap<AppConfiguration> bootstrap) {
+
+        }
+
+        @Override
+        public void run(AppConfiguration configuration, Environment environment) throws Exception {
+
+        }
+    }
+</pre>
+
+
+Base Entity
+
+<pre>
+    package com.notempo1320.model;
+
+    import com.fasterxml.jackson.annotation.JsonIgnore;
+
+    import java.io.Serializable;
+    import javax.persistence.*;
+
+
+    public abstract class BaseModel implements Serializable {
+
+        protected int id;
+
+        @Id
+        @GeneratedValue(strategy=GenerationType.IDENTITY)
+        @Column
+        @JsonIgnore
+        public int getId();
+
+        public int setId(int id) {
+            this.id = id;
+        }
+
+    }
+</pre>
+
+
+
+Person Entity
+
+<pre>
+
+    package com.notempo1320.model;
+
+    import javax.persistence.*;
+    import javax.persistence.Entity;
+    import javax.persistence.Table;
+    import javax.validation.constraints.NotNull;
+    import org.hibernate.annotations.*;
+    import org.hibernate.validator.constraints.Length;
+
+    @Entity
+    @Table(
+        name = "persons",
+        uniqueConstraints =
+            {@UniqueConstraint(columnNames={"username", "email"})}
+    )
+
+    public class Person extends BaseModel {
+        @Column(name = "email")
+        @NotNull @Length(min = 8)
+        private String email;
+
+        @Column(name = "username")
+        @NotNull @Length(min = 8)
+        private String username;
+
+        @Column(name = "token")
+        @NotNull @Length(min = 32)
+        private String token;
+
+        @Column(name = "first_name")
+        private String firstName;
+
+        @Column(name = "last_name")
+        private String lastName;
+
+        public String getUserName() {
+            return this.username;
+        }
+
+        public String getEmail() {
+            return this.email;
+        }
+
+        public String getToken() {
+            return this.token;
+        }
+
+        public String getFirstName() {
+            return this.firstName;
+        }
+
+        public String getLastName() {
+            return this.lastName;
+        }
+    }
+
+</pre>
+
+
+Hibernate base DAO
+
+
+Dropwizard Hibernate
+Database access
+
+Add connection params to config.yml
+<pre>
+  # Database settings.
+      database:
+
+      # the name of your JDBC driver
+      driver_class: org.h2.Driver
+
+      # the username
+      user: notempo
+
+      # the JDBC URL
+      url: jdbc:h2:user-rest  
+</pre>
+
+
+Add DataSourceFactory to the configuration class
+
+<pre>
+    @Valid
+    @NotNull
+    @JsonProperty
+    private DataSourceFactory database = new DataSourceFactory();
+
+    public DataSourceFactory getDataSourceFactory() {
+        return database;
+    }
+
+</pre>
+
+
+Then, add a HibernateBundle instance to your application class, specifying your entity classes and how to get a 
+DataSourceFactory from your configuration subclass:
+
+
+<pre>
+
+  	private final HibernateBundle<AppConfiguration> hibernate =
+        new HibernateBundle<AppConfiguration>(User.class) {
+            @Override
+            public DataSourceFactory getDataSourceFactory(AppConfiguration configuration) {
+                return configuration.getDataSourceFactory();
+            }
+    };
+
+
+    @Override
+    public void initialize(Bootstrap<AppConfiguration> bootstrap) {
+        bootstrap.addBundle(hibernate);
+    }
+
+    @Override
+    public void run(AppConfiguration config,
+                    Environment environment) throws ClassNotFoundException {
+        final UserDAO dao = new UserDAO(hibernate.getSessionFactory());
+        environment.jersey().register(new UserResource(dao));
+    }
+
+
+</pre>
+
+
+
+
+
+Base DAO
+
+
+References
+
+http://maven.apache.org/guides/getting-started/index.html
+
+https://dropwizard.github.io/dropwizard/getting-started.html
+
+http://dropwizard.io/manual/jdbi.html
