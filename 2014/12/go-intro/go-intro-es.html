@@ -40,7 +40,7 @@ Agregar /usr/local/go/bin  a la variable de entorno PATH
 
 <h3> Hello world </h3>
 <p>
-    Crear un archivo llamado  hello.go and copy the code:
+    Crear un archivo llamado  hello.go and copiar el siguiente c&oacute;digo:
 </p>
 <pre>
   package main
@@ -52,7 +52,7 @@ Agregar /usr/local/go/bin  a la variable de entorno PATH
 </pre>
 
 <p>
-Run the program:
+Ejecutar el programa:
 </p>
 
 <pre>
@@ -63,8 +63,9 @@ Run the program:
 <h2> Simple Website </h2>
 
 <p>
- We will use the standard <a href="http://golang.org/pkg/net/http/">http package </a> to write a simple httpserver, frist at all We will create
- a file named server.go and Wi will add the next lines:
+Usaremos el paquete standar 
+<a href="http://golang.org/pkg/net/http/">http package </a>  para escribir un servidor httpr, para lo que crearemos un archivo 
+ llamado server.go y agregaremos lo siguiente:
 </p>
 
 <pre>
@@ -78,7 +79,7 @@ Run the program:
 </pre>
 
 <p>
-Now we will create an struct where to store every page:
+Ahora crearemos un struct que almacena cada p&aacute;gina:
 
 </p>
 
@@ -90,12 +91,13 @@ Now we will create an struct where to store every page:
 </pre>
 
 <p>
-    Every page is represented by a title tht is a string and the body that will be represented as a slide (sequence) of bytes. 
-    A detailed explanation of <a href="http://blog.golang.org/go-slices-usage-and-internals">slides can be found at this link. </a>
+    Cada p&aacute;gina es representada por un t&iacute;tulo que es un string y un cuerpo que es un slide (sequencia) de bytes.
+    Una explicaci&oacute;n detallada de <a href="http://blog.golang.org/go-slices-usage-and-internals">slides en este enlace. </a>
 </p>
 
 <p>
-    Now we create a method that will read the body from a text file, for simplicity We assume that filename is the page's title.
+    Ahora crearemos un m&eacute;todo que lee el cuerpo de un archivo de texto, por simplicidad asumimos que el nombre del archivo
+    es el t&iacute; de la p&aacute;gina.
 </p>
 
 <pre>
@@ -111,7 +113,7 @@ Now we will create an struct where to store every page:
 
 
 <p>
-Now we add the code that will handle http request and will return the html content:
+Ahora agregaremos el c&oacute;digo que manejar&acute; las peticiones http y retornar&aacute; el contenido html:
 </p>
 
 
@@ -126,7 +128,7 @@ Now we add the code that will handle http request and will return the html conte
 </pre>
 
 <p>
-Finally, We will add the main method, where We create the http server:
+Finalmente, agregamos el m&eacute;todo principal donde creamos el servidor http:
 </p>
 
 <pre>
@@ -137,17 +139,21 @@ Finally, We will add the main method, where We create the http server:
 </pre>
 
 <p>
-    We can build the program with the command <code> go build server.go </code> and then running it just typing <code> ./server</code>
+  Podemos compilar el programa con el comando <code> go build server.go </code> y ejecutarlo con <code> ./server</code>
 </p>
 
 <p>
-    You can test the server with a simple curl request:
+    Se puede probar con una simple petici&oacute;n curl:
 </p>
 
 <pre>
     $curl http://localhost:8080/view/go-intro
 </pre>
 
+<p>
+
+El c&oacute;digo fuente pued ser encontrado en    <a href="https://github.com/maigfrga/blog/tree/master/2014/12/go-intro">   este enlace </a>
+</p>
 
 <h2> References</h2>
 
