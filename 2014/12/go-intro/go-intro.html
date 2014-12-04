@@ -1,0 +1,183 @@
+<p> Golang, is a programming language initially developed at Google. One of it's creators is 
+   <a href="http://en.wikipedia.org/wiki/Ken_Thompson"> Ken Thompson </a>, one of the creators of C Programming Language.
+    It is a statically-typed language with syntax loosely derived from that of C,
+adding garbage collection, type safety, some dynamic-typing capabilities, additional built-in types such as variable-length
+arrays and key-value maps, and a large standard library. In this post We will cover installation, and the construtcion of a basic website.
+</p>
+
+<h2> Instalation</h2>
+
+<p>
+    We will install and configure debian based system. You can referd to 
+    <a href="https://golang.org/doc/install"> official documentation </a> where instructions for other platforms are availabe.
+
+</p>
+
+<h3> Installing the language </h3>
+<pre>
+  $ sudo apt-get install golang  
+</pre>
+
+<h3> Installing the tools</h3>
+<p>
+    After install the language you must  <a href="https://golang.org/dl/  ">  download the tools file </a> and extract it into /usr/local
+</p>
+
+<pre>
+  $ wget https://storage.googleapis.com/golang/go1.3.3.linux-amd64.tar.gz
+  $ sudo mv go1.3.3.linux-amd64.tar.gz /usr/local/
+  $ cd /usr/local
+  $ sudo  tar -xzf go1.3.3.linux-amd64.tar.gz
+</pre>
+
+
+<p>
+Add /usr/local/go/bin to the PATH environment variable
+</p>
+
+<pre>
+    export PATH=$PATH:/usr/local/go/bin
+</pre>
+
+<h3> Hello world </h3>
+<p>
+    Create a file named hello.go and copy the code:
+</p>
+<pre>
+  package main
+  import "fmt"
+
+  func main() {
+      fmt.Printf("hello, world\n")
+  }
+</pre>
+
+<p>
+Run the program:
+</p>
+
+<pre>
+  $ go run hello.go  
+</pre>
+
+
+<h2> Simple Website </h2>
+
+<p>
+ We will use the standard <a href="http://golang.org/pkg/net/http/">http package </a> to write a simple httpserver, frist at all We will create
+ a file named server.go and Wi will add the next lines:
+</p>
+
+<pre>
+    package main
+
+    import (
+        "fmt"
+        "io/ioutil"
+    	"net/http"
+    )
+</pre>
+
+<p>
+Now we will create an struct where to store every page:
+
+</p>
+
+<pre>
+    type Page struct {
+        Title string
+        Body  []byte
+    }
+</pre>
+
+<p>
+    Every page is represented by a title tht is a string and the body that will be represented as a slide (sequence) of bytes. 
+    A detailed explanation of <a href="http://blog.golang.org/go-slices-usage-and-internals">slides can be found at this link. </a>
+</p>
+
+<p>
+    Now we create a method that will read the body from a text file, for simplicity We assume that filename is the page's title.
+</p>
+
+<pre>
+    func loadPage(title string) (*Page, error) {
+        filename := title + ".html"
+        body, err := ioutil.ReadFile(filename)
+        if err != nil {
+            return nil, err
+        }
+        return &Page{Title: title, Body: body}, nil
+    }
+</pre>
+
+
+<p>
+Now we add the code that will handle http request and will return the html content:
+</p>
+
+
+<pre>
+
+    func viewHandler(w http.ResponseWriter, r *http.Request) {
+        title := r.URL.Path[len("/view/"):]
+        p, _ := loadPage(title)
+        fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", p.Title, p.Body)
+    }
+
+</pre>
+
+<p>
+Finally, We will add the main method, where We create the http server:
+</p>
+
+<pre>
+    func main() {
+        http.HandleFunc("/view/", viewHandler)
+        http.ListenAndServe(":8080", nil)
+    }
+</pre>
+
+<p>
+    We can build the program with the command <code> go build server.go </code> and then running it just typing <code> ./server</code>
+</p>
+
+<p>
+    You can test the server with a simple curl request:
+</p>
+
+<pre>
+    $curl http://localhost:8080/view/go-intro
+</pre>
+
+
+<h2> References</h2>
+
+<ul>
+    <li>
+        <a href="https://golang.org">  Go's official site </a>
+    </li>
+    <li>
+         <a href="http://en.wikipedia.org/wiki/Go_%28programming_language%29 "> Wikipedia </a>
+    </li>
+    <li>
+        <a href="https://github.com/fatih/vim-go2"> Vim Plugin for go </a>
+    </li>
+    <li>
+        <a href="http://obahua.com/setup-vim-for-go-development/"> Setup VIM for Go development  </a>
+    </li>
+    <li>
+         <a href="https://golang.org/doc/code.html">How to Write Go Code </a>
+    </li>
+    <li>
+       <a href="http://golang.org/pkg/net/http/"> Package http </a>
+    </li>
+    <li>
+       <a href="https://golang.org/doc/articles/wiki/"> Writing Web Applications </a>
+    </li>
+    <li>
+       <a href="http://www.golang-book.com/"> An Introduction to Programming in Go. </a>
+    </li>
+    <li>
+       <li href="http://blog.golang.org/go-slices-usage-and-internals"> Go Slices: usage and internals </li>
+    </li>
+</ul>

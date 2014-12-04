@@ -1,18 +1,39 @@
-create maven project
+<p>
+    <a href="https://dropwizard.github.io/dropwizard/getting-started.html">Dropwizard </a> is a Java framework used to build Restful APIs.
+    This post shows an example application that can be found at this <a href="https://github.com/maigfrga/nt-user-rest">link. </a>
+</p>
 
 
+<h2>Maven project management</h2>
+
+<p>
+Apache Maven is a software project management and comprehension tool. You can learn the basis at this <a href="http://maven.apache.org/guides/getting-started/index.html">link </a>
+</p>
+
+<h3>Create maven project </h3>
+
+<pre>
 mvn archetype:generate -DgroupId=com.notempo1320 \
     -DartifactId=user-rest -DarchetypeArtifactId=maven-archetype-quickstart \
     -DinteractiveMode=false
+</pre>
 
+<h3>Maven project configuration</h3>
 
-Add a dropwizard.version property to your POM with the current version of Dropwizard (which is 0.7.0 at the moment of write this post)
+<p>
+Add a dropwizard.version property to your POM with the current version of Dropwizard (which is 0.7.0 at the moment of write this post):
+</p>
+<pre>
+    <properties>
+        <dropwizard.version>0.7.0</dropwizard.version>
+    </properties>
+</pre>
 
-<properties>
-    <dropwizard.version>0.7.0</dropwizard.version>
-</properties>
-
+<p>
 Add the dropwizard libraries as dependencies:
+</p>
+
+<pre>
   <dependencies>
     <dependency>
       <groupId>com.h2database</groupId>
@@ -52,88 +73,136 @@ Add the dropwizard libraries as dependencies:
     </dependency>
   </dependencies>
 
-
-
-Creating A Configuration Class
-
-
-<pre>
-    package com.notempo1320.configuration;
-
-
-    public class AppConfiguration extends io.dropwizard.Configuration {
-    }
-
 </pre>
 
-Creating An Application Class
+
+<h2> Dropwizard project </h2>
+
+<h3>Creating A Configuration Class </h3>
+
 
 <pre>
-    package com.notempo1320;
+    public class AppConfiguration extends io.dropwizard.Configuration {
+        private URI endpointUri = null;
 
-    import com.notempo1320.configuration.AppConfiguration;
-    import io.dropwizard.Application;
-    import io.dropwizard.setup.Bootstrap;
-    import io.dropwizard.setup.Environment;
+        @NotNull
+        @JsonProperty("endpoint")
+        private  String endpoint;
 
-    public class App extends Application<AppConfiguration>
-    {
+        @Valid
+        @NotNull
+        @JsonProperty("database")
+        private DataSourceFactory database = new DataSourceFactory();
+
+        public DataSourceFactory getDataSourceFactory() {
+            return database;
+        }
+
+        public URI getEndpoint() throws java.net.URISyntaxException {
+            if (null == this.endpointUri) {
+                this.endpointUri = new URI(this.endpoint);
+            }
+            return this.endpointUri;
+        }
+    }
+</pre>
+
+
+<h3>Creating An Application Class </h3>
+
+<p>
+    The App class is the entry point to the Rest Api. 
+    The example below shows how to configure <a href="https://dropwizard.github.io/dropwizard/manual/hibernate.html">hibernate bundle </a> ,
+   <a href="http://dropwizard.io/manual/core.html#commands"> command line interfaces  </a>, 
+    an <a href="https://dropwizard.github.io/dropwizard/manual/auth.html">  Authentication provider </a> and a basic Person Resource:
+</p>
+
+<pre>
+
+    public class App extends Application<AppConfiguration> {
+
+        private final HibernateBundle<AppConfiguration> hibernate;
+
+        public App() {
+            this.hibernate= new HibernateBundle<AppConfiguration>(
+                Person.class, User.class) {
+                @Override
+                public DataSourceFactory getDataSourceFactory(
+                    AppConfiguration configuration) {
+                    return configuration.getDataSourceFactory();
+
+                }
+            };
+
+        }
 
         @Override
         public void initialize(Bootstrap<AppConfiguration> bootstrap) {
 
+            bootstrap.getObjectMapper().registerModule(new MrBeanModule());
+            bootstrap.getObjectMapper()
+                    .setPropertyNamingStrategy(
+                        PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
+            bootstrap.addBundle(this.hibernate);
+            bootstrap.addCommand(new CreateUserCommand());
+            bootstrap.addCommand(new ListUserCommand());
+
+
         }
 
         @Override
-        public void run(AppConfiguration configuration, Environment environment) throws Exception {
+        public void run(AppConfiguration configuration, Environment environment)
+            throws Exception {
+
+            final GenericDAO<User> userDao =
+                    new UserHibernateDAO(this.hibernate.getSessionFactory());
+            final BaseFacade<User> userFacade = new UserFacade(userDao);
+
+            final GenericDAO<Person> dao =
+                    new PersonHibernateDAO(this.hibernate.getSessionFactory());
+            final BaseFacade<Person> personFacade = new  PersonFacade(dao);
+
+            environment.jersey().register(
+                new PersonResource(personFacade, configuration)
+            );
+
+            environment.jersey().register(
+                new BasicAuthProvider<>(new SimpleAuthenticator(userFacade), "ntrest"));
+
 
         }
-    }
-</pre>
-
-
-Base Entity
-
-<pre>
-    package com.notempo1320.model;
-
-    import com.fasterxml.jackson.annotation.JsonIgnore;
-
-    import java.io.Serializable;
-    import javax.persistence.*;
-
-
-    public abstract class BaseModel implements Serializable {
-
-        protected int id;
-
-        @Id
-        @GeneratedValue(strategy=GenerationType.IDENTITY)
-        @Column
-        @JsonIgnore
-        public int getId();
-
-        public int setId(int id) {
-            this.id = id;
+        public static void main(String[] args) throws Exception {
+            new App().run(args);
         }
-
     }
+
 </pre>
 
+<H3> Model entities</H3>
 
+<h4>Base Entity </h4>
 
-Person Entity
+<p>
+To make easier serialization and common operations, all models will inherit from a Base Class:
+</p>
+
 
 <pre>
 
-    package com.notempo1320.model;
+    public abstract class BaseModel {
+         public UUID randomUUID() {
+            return UUID.randomUUID();
+        }
 
-    import javax.persistence.*;
-    import javax.persistence.Entity;
-    import javax.persistence.Table;
-    import javax.validation.constraints.NotNull;
-    import org.hibernate.annotations.*;
-    import org.hibernate.validator.constraints.Length;
+
+    }
+
+</pre>
+
+
+<h4> Person Entity </h4>
+
+<pre>
 
     @Entity
     @Table(
@@ -143,6 +212,115 @@ Person Entity
     )
 
     public class Person extends BaseModel {
+        @Id
+        @GeneratedValue(strategy=GenerationType.IDENTITY)
+        @Column
+        private Long    id;
+
+        @Column
+        @NotNull @Length(min = 8)
+        private String email;
+
+        @Column
+        @NotNull @Length(min = 8)
+        private String username;
+
+        @Column
+        private String token;
+
+        @Column(name="first_name")
+        private String firstName;
+
+        @Column(name="last_name")
+        private String lastName;
+
+        @Column
+        @NotNull
+        private boolean active;
+
+        @JsonProperty
+        public Long getId() {
+            return id;
+        }
+
+        @JsonProperty
+        public String getUsername() {
+            return this.username;
+        }
+
+        @JsonProperty
+        public String getEmail() {
+            return this.email;
+        }
+
+        @JsonProperty
+        public String getToken() {
+            return this.token;
+        }
+
+        @JsonProperty
+        public String getFirstName() {
+            return this.firstName;
+        }
+
+        @JsonProperty
+        public String getLastName() {
+            return this.lastName;
+        }
+
+        @JsonProperty
+        public boolean getActive() {
+            return this.active;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public void setToken(String token) {
+            this.token = token;
+        }
+
+        public void setActive(boolean active) {
+            this.active = active;
+        }
+
+        public void setFirstName(String firstName) {
+            this.firstName = firstName;
+        }
+
+        public void setLastName(String lastName) {
+            this.lastName = lastName;
+        }
+
+    }
+
+</pre>
+
+
+<h4>User Entity</h4>
+
+<pre>
+
+
+    @Entity
+    @Table(
+        name = "users",
+        uniqueConstraints =
+            {@UniqueConstraint(columnNames={"username", "email", "token"})}
+    )
+
+
+    public class User extends BaseModel {
+       @Id
+        @GeneratedValue(strategy=GenerationType.IDENTITY)
+        @Column
+        private Long    id;
+
         @Column(name = "email")
         @NotNull @Length(min = 8)
         private String email;
@@ -152,16 +330,19 @@ Person Entity
         private String username;
 
         @Column(name = "token")
-        @NotNull @Length(min = 32)
+        @NotNull
         private String token;
 
-        @Column(name = "first_name")
-        private String firstName;
+        @Column(name = "is_active")
+        @NotNull
+        private boolean active;
 
-        @Column(name = "last_name")
-        private String lastName;
 
-        public String getUserName() {
+        public Long getId() {
+            return id;
+        }
+
+        public String getUsername() {
             return this.username;
         }
 
@@ -173,96 +354,589 @@ Person Entity
             return this.token;
         }
 
-        public String getFirstName() {
-            return this.firstName;
+        public void setUsername(String username) {
+            this.username = username;
         }
 
-        public String getLastName() {
-            return this.lastName;
+        public void setEmail(String email) {
+            this.email = email;
         }
+
+        public void setToken(String token) {
+            this.token = token;
+        }
+
+        public boolean getActive() {
+            return this.active;
+        }
+
+        public void setActive(boolean active) {
+            this.active = active;
+        }
+
     }
-
 </pre>
 
 
-Hibernate base DAO
+<h3> Data Access layer</h3>
 
-
-Dropwizard Hibernate
-Database access
-
-Add connection params to config.yml
+<h4> Generic DAO</h4>
 <pre>
-  # Database settings.
-      database:
 
-      # the name of your JDBC driver
-      driver_class: org.h2.Driver
+    public interface GenericDAO <T  extends BaseModel> {
+        public T create(T obj);
 
-      # the username
-      user: notempo
+        public Optional<T> findById(Long id);
 
-      # the JDBC URL
-      url: jdbc:h2:user-rest  
-</pre>
+        public List<T> findByParams(Optional<Map<String, Object>> params);
 
+        public T update(T obj);
 
-Add DataSourceFactory to the configuration class
+        public void delete(T obj);
 
-<pre>
-    @Valid
-    @NotNull
-    @JsonProperty
-    private DataSourceFactory database = new DataSourceFactory();
-
-    public DataSourceFactory getDataSourceFactory() {
-        return database;
+        public long count();
     }
-
 </pre>
 
-
-Then, add a HibernateBundle instance to your application class, specifying your entity classes and how to get a 
-DataSourceFactory from your configuration subclass:
-
-
+<h4>Hibernate base DAO </h4>
 <pre>
 
-  	private final HibernateBundle<AppConfiguration> hibernate =
-        new HibernateBundle<AppConfiguration>(User.class) {
-            @Override
-            public DataSourceFactory getDataSourceFactory(AppConfiguration configuration) {
-                return configuration.getDataSourceFactory();
+
+    abstract public class BaseHibernateDAO<T> extends AbstractDAO <T> {
+
+        private static final Logger LOGGER =
+            LoggerFactory.getLogger(BaseHibernateDAO.class);
+
+        public BaseHibernateDAO(SessionFactory sessionFactory) {
+            super(sessionFactory);
+        }
+
+        public abstract T create(T obj);
+
+        public abstract Optional<T> findById(Long id);
+
+        public List<T> findByParams(
+            Optional<Map<String, Object>> params) {
+            Criteria criteria = criteria();
+            LOGGER.info("Executing findByParams");
+            if(params.isPresent()) {
+
+                Map<String, Object> mapParams = params.get();
+                for (Map.Entry<String, Object> entry: mapParams.entrySet()) {
+                    criteria.add(
+                        Restrictions.eq(entry.getKey(), entry.getValue()));
+                }
             }
-    };
 
+            return criteria.list();
+        }
 
-    @Override
-    public void initialize(Bootstrap<AppConfiguration> bootstrap) {
-        bootstrap.addBundle(hibernate);
+        public abstract T update(T obj);
+
+        public abstract void delete(T obj);
+
+        public long count() {
+            return (Long) criteria().
+                setProjection(Projections.rowCount()).uniqueResult();
+        }
+
     }
+</pre>
 
-    @Override
-    public void run(AppConfiguration config,
-                    Environment environment) throws ClassNotFoundException {
-        final UserDAO dao = new UserDAO(hibernate.getSessionFactory());
-        environment.jersey().register(new UserResource(dao));
+
+<h4> User DAO </h4>
+
+<pre>
+
+
+    public class UserHibernateDAO extends BaseHibernateDAO<User>
+        implements GenericDAO<User>
+        {
+
+        @Inject
+        public UserHibernateDAO(SessionFactory factory) {
+            super(factory);
+        }
+
+        @Override
+        public User create(User obj){
+            return persist(obj);
+        }
+
+        @Override
+        public Optional<User> findById(Long id) {
+            return Optional.fromNullable(get(id));
+        }
+
+        @Override
+        public User update(User obj) {
+            return persist(obj);
+        }
+
+        @Override
+        public void delete(User obj) {
+            currentSession().delete(obj);
+        }
     }
 
 
 </pre>
 
 
+<h4>Person DAO</h4>
+<pre>
+
+
+    public class PersonHibernateDAO extends BaseHibernateDAO<Person>
+        implements GenericDAO<Person>
+         {
+
+        @Inject
+        public PersonHibernateDAO(SessionFactory factory) {
+            super(factory);
+        }
+
+        @Override
+        public Person create(Person obj){
+            obj.setToken(obj.randomUUID().toString());
+            return persist(obj);
+        }
+
+        @Override
+        public Optional<Person> findById(Long id) {
+            return Optional.fromNullable(get(id));
+        }
+
+
+        @Override
+        public Person update(Person obj) {
+            return persist(obj);
+        }
+
+        @Override
+        public void delete(Person obj) {
+            currentSession().delete(obj);
+        }
+    }
+</pre>
+
+
+<h3> Facade Layer </h3>
+
+<h4> Base Facade </h4>
+
+<pre>
+
+    public interface BaseFacade<T extends BaseModel> {
+
+        public T create(T obj);
+
+        public Optional<T> findById(Long id);
+
+        public List<T> findByParams(Optional<Map<String, Object>> params);
+
+        public T update(T obj);
+
+        public void delete(T obj);
+
+        public long count();
+    }
+</pre>
+
+
+<h4> User Facade</h4>
+
+<pre>
+
+
+    public class UserFacade implements BaseFacade<User> {
+        private GenericDAO<User> dao;
+
+        @Inject
+        public UserFacade(GenericDAO<User> dao) {
+            this.dao = dao;
+        }
+
+        public User create(User model) {
+            return dao.create(model);
+        }
+
+        public Optional<User> findById(Long id) {
+            return dao.findById(id);
+        }
+
+        public List<User> findByParams(Optional<Map<String, Object>> params) {
+            return dao.findByParams(params);
+        }
+
+        public User update(User obj) {
+            return dao.update(obj);
+        }
+
+        public void delete(User obj) {
+            dao.delete(obj);
+        }
+
+        public long count() {
+            return dao.count();
+        }
+
+
+    }
+
+</pre>
+
+
+<h4> Person facade</h4>
+
+<pre>
+
+    public class PersonFacade implements BaseFacade<Person> {
+        private GenericDAO<Person> dao;
+
+        @Inject
+        public PersonFacade(GenericDAO<Person> dao) {
+            this.dao = dao;
+        }
+
+        public Person create(Person model) {
+            return dao.create(model);
+        }
+
+        public Optional<Person> findById(Long id) {
+            return dao.findById(id);
+        }
+
+        public List<Person> findByParams(Optional<Map<String, Object>> params) {
+            return dao.findByParams(params);
+        }
+
+        public Person update(Person obj) {
+            return dao.update(obj);
+        }
+
+        public void delete(Person obj) {
+            dao.delete(obj);
+        }
+
+        public long count() {
+            return dao.count();
+        }
+
+    }
+</pre>
+
+<h3> Command Line Interfaces </h3>
+
+<p>
+For security reasons, I don't want to expose Admin User creation over http, so the only chance to create and list admin users is using a command Line interface.
+</p>
+
+
+<h4> Command Line to create Users</h4>
+
+<pre>
+
+    public class CreateUserCommand extends ConfiguredCommand<AppConfiguration> {
+
+        private static final Logger LOGGER =
+            LoggerFactory.getLogger(CreateUserCommand.class);
+
+        private GuiceBundle<AppConfiguration> guiceBundle;
+
+        public CreateUserCommand() {
+            super("create_user", "Create a user that can access the app");
+
+
+        }
+
+        @Override
+        public void configure(Subparser subparser) {
+            super.configure(subparser);
+            subparser.addArgument("-u", "--username")
+                     .help("admin username");
+        }
+
+
+        @Override
+        protected void run(Bootstrap<AppConfiguration> bootstrap,
+                           Namespace namespace,
+                           AppConfiguration configuration) {
+            AnnotationConfiguration dbConfig = null;
+            SessionFactory factory = null;
+            try {
+                dbConfig = HibernateConfig.getConfig(configuration);
+                dbConfig.addAnnotatedClass(User.class);
+                factory = dbConfig.buildSessionFactory();
+                final GenericDAO<User> dao =
+                    new UserHibernateDAO(factory);
+                final UserFacade facade = new UserFacade(dao);
+
+                String username = namespace.getString("username");
+                String pass1;
+                String pass2;
+                User obj = new User();
+
+                factory.getCurrentSession().beginTransaction();
+                System.out.print("\n Creating user: \n");
+                System.out.print("\n type your username: \n");
+                BufferedReader in = new BufferedReader(
+                    new InputStreamReader(System.in));
+                obj.setUsername(in.readLine());
+
+                System.out.print("\n type your email: ");
+                in = new BufferedReader(new InputStreamReader(System.in));
+                obj.setEmail(in.readLine());
+
+                obj.setToken(obj.randomUUID().toString());
+
+                User createdUser = dao.create(obj);
+                factory.getCurrentSession().getTransaction().commit();
+                System.out.print("\nUser successfully created:\n");
+
+                StringWriter writer = new StringWriter();
+                bootstrap.getObjectMapper().writeValue(writer, createdUser);
+                System.out.print(writer.toString());
+                System.out.print("\n");
+                System.exit(0);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                factory.getCurrentSession().getTransaction().rollback();
+                System.exit(1);
+            }
+
+        }
+
+    }
+</pre>
+
+
+<h4>Command Line to List Admin Users </h4>
+
+<pre>
+
+
+    public class ListUserCommand extends ConfiguredCommand<AppConfiguration> {
+
+        private static final Logger LOGGER =
+            LoggerFactory.getLogger(ListUserCommand.class);
+
+        private GuiceBundle<AppConfiguration> guiceBundle;
+
+        public ListUserCommand() {
+            super("list_users", "List all admin users");
+
+
+        }
+
+        @Override
+        public void configure(Subparser subparser) {
+            super.configure(subparser);
+        }
+
+
+        @Override
+        protected void run(Bootstrap<AppConfiguration> bootstrap,
+                           Namespace namespace,
+                           AppConfiguration configuration) {
+            AnnotationConfiguration dbConfig = null;
+            SessionFactory factory = null;
+            try {
+                dbConfig = HibernateConfig.getConfig(configuration);
+                dbConfig.addAnnotatedClass(User.class);
+                factory = dbConfig.buildSessionFactory();
+                final GenericDAO<User> dao =
+                    new UserHibernateDAO(factory);
+                final UserFacade facade = new UserFacade(dao);
+
+
+                factory.getCurrentSession().beginTransaction();
+                System.out.print("\n Admin User List \n");
+
+                List<User> users = facade.findByParams(
+                    Optional.fromNullable(null));
+                StringWriter writer = new StringWriter();
+                bootstrap.getObjectMapper().writeValue(writer, users);
+                System.out.print(writer.toString());
+                System.out.print("\n");
+                System.exit(0);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                factory.getCurrentSession().getTransaction().rollback();
+                System.exit(1);
+            }
+
+        }
+
+    }
+</pre>
+
+
+<h3> Rest Resources </h3>
+
+<h4> Base Resource</h4>
+
+<pre>
 
 
 
-Base DAO
+    public interface BaseResource <T extends BaseModel> {
+
+        @POST
+        public Response create(@Auth User user, @Valid T model, @Context UriInfo info);
+
+        @GET
+        public List<T> list(@Auth User user) throws InternalErrorException;
+
+        @GET
+        @Path("/{id}")
+        public T retrieve(@Auth User user, @PathParam("id") Long id)
+            throws ResourceNotFoundException, InternalErrorException;
+
+        @PUT
+        @Path("/{id}")
+        public T update(@Auth User user, @PathParam("id") Long id,
+            @Valid T entity) throws ResourceNotFoundException,
+            InternalErrorException;
+
+        @DELETE
+        @Path("/{id}")
+        public Response delete(@Auth User user, @PathParam("id") Long id)
+            throws ResourceNotFoundException, InternalErrorException;
+    }
+</pre>
 
 
-References
+<h4>Person Resource </h4>
 
-http://maven.apache.org/guides/getting-started/index.html
+<pre>
 
-https://dropwizard.github.io/dropwizard/getting-started.html
 
-http://dropwizard.io/manual/jdbi.html
+    @Path("/persons")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public class PersonResource implements BaseResource<Person> {
+
+        private static final Logger LOGGER =
+            LoggerFactory.getLogger(PersonResource.class);
+
+        private final BaseFacade<Person> facade;
+        private final URI resourceUri;
+        private final AppConfiguration config;
+
+        @Inject
+        public PersonResource(BaseFacade<Person> facade, AppConfiguration config)
+            throws java.net.URISyntaxException {
+            this.resourceUri = config.getEndpoint().resolve("/persons");
+            this.facade = facade;
+            this.config = config;
+        }
+
+        @Override
+        @POST
+        @UnitOfWork
+        public Response create(@Auth User user, @Valid Person model,
+            @Context UriInfo info) {
+
+            LOGGER.info("Creating person with admin user {}", user.getUsername());
+            model.setActive(true);
+            Person obj = facade.create(model);
+            URI resource = HttpUtils.getCreatedResourceURI(info,
+                resourceUri, obj.getId());
+
+            LOGGER.info("Person with id {} created", obj.getId());
+            return Response.created(resource).entity(
+                new SerializedModel<>("person", obj)).build();
+        }
+
+        @Override
+        @GET
+        @UnitOfWork
+        public List<Person> list(@Auth User user) throws InternalErrorException {
+            LOGGER.info("Getting person list with admin user {}",
+                user.getUsername());
+            return facade.findByParams(Optional.fromNullable(null));
+        }
+
+        @GET
+        @Override
+        @Path("/{id}")
+        @UnitOfWork
+        public Person retrieve(@Auth User user, @PathParam("id") Long id)
+            throws ResourceNotFoundException, InternalErrorException {
+
+            LOGGER.info("Retreiving person {} with admin user {}", id,
+                user.getUsername());
+
+            Optional<Person> op = facade.findById(id);
+            if (!op.isPresent()) {
+                throw new ResourceNotFoundException();
+            }
+            return op.get();
+
+        }
+
+        @PUT
+        @Override
+        @Path("/{id}")
+        @UnitOfWork
+        public Person update(@Auth User user, @PathParam("id") Long id,
+            @Valid Person model) throws ResourceNotFoundException,
+            InternalErrorException {
+
+            LOGGER.info("Updating person {} with admin user {}", id,
+                user.getUsername());
+
+            Optional<Person> op = facade.findById(id);
+
+            if (!op.isPresent()) {
+                throw new ResourceNotFoundException();
+            }
+
+            return facade.update(model);
+        }
+
+
+        @DELETE
+        @Override
+        @Path("/{id}")
+        @UnitOfWork
+        public Response delete(@Auth User user, @PathParam("id") Long id)
+            throws ResourceNotFoundException, InternalErrorException {
+
+            LOGGER.info("Deleteing person {} with admin user {}", id,
+                user.getUsername());
+            Optional<Person> op = facade.findById(id);
+            if (!op.isPresent()) {
+                throw new ResourceNotFoundException();
+            }
+
+            Person obj = op.get();
+            facade.delete(obj);
+            return Response.ok().build();
+        }
+    }
+</pre>
+
+<h2>References </h2>
+
+<ul>
+
+    <li>
+       <a href="http://maven.apache.org/guides/getting-started/index.html">Starting with maven </a>
+    </li>
+
+    <li>
+       <a href="https://dropwizard.github.io/dropwizard/getting-started.html">Starting with dropwizard </a>
+    </li>
+    <li>
+        <a href="https://github.com/maigfrga/nt-user-rest"> User rest example</a>
+    </li>
+    <li>
+        <a href="https://dropwizard.github.io/dropwizard/manual/hibernate.html">Dropwizard Hibernate bundle </a>
+    </li>
+    <li>
+        <a href="http://dropwizard.io/manual/core.html#commands"/>Dropwizard command line interfaces  </a>
+    </li>
+
+</ul>
