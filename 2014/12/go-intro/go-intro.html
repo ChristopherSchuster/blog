@@ -121,7 +121,7 @@ Now we add the code that will handle http request and will return the html conte
     func viewHandler(w http.ResponseWriter, r *http.Request) {
         title := r.URL.Path[len("/view/"):]
         p, _ := loadPage(title)
-        fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", p.Title, p.Body)
+        fmt.Fprintf(w, "%s",  p.Body)
     }
 
 </pre>
@@ -182,6 +182,6 @@ You can see the source code at   <a href="https://github.com/maigfrga/blog/tree/
        <a href="http://www.golang-book.com/"> An Introduction to Programming in Go. </a>
     </li>
     <li>
-       <li href="http://blog.golang.org/go-slices-usage-and-internals"> Go Slices: usage and internals </li>
+       <a href="http://blog.golang.org/go-slices-usage-and-internals"> Go Slices: usage and internals </a>
     </li>
 </ul>

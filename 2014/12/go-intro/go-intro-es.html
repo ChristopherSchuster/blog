@@ -1,7 +1,5 @@
-<p> Golang, es un lenguaje de programaci&oacute;n desarrollado inicialmente en Google. Uno de sus creadores es 
-   <a href="http://en.wikipedia.org/wiki/Ken_Thompson"> Ken Thompson </a>, uno de los creadores del lenguaje de programaci&oacute;n C.
-    Es de tipado est&aacute;tico con una sintaxis derivada de C, agrando recolecci&oacute;n de basura, tipos de datos seguros, etc.
-    En este post cubriremos instalaci&oacute;n  y construcci&oacute;n de un sitio web sencillo.
+<p> Golang, es un lenguaje de programaci&oacute;n desarrollado inicialmente en Google. Uno de sus creadores es <a href="http://en.wikipedia.org/wiki/Ken_Thompson"> Ken Thompson </a>, uno de los creadores del lenguaje de programaci&oacute;n C.
+Es de tipado est&aacute;tico con una sintaxis derivada de C, agrando recolecci&oacute;n de basura, tipos de datos seguros, etc. En este post cubriremos instalaci&oacute;n  y construcci&oacute;n de un sitio web sencillo.
 </p>
 
 <h2> Instalaci&oacute;n</h2>
@@ -38,9 +36,9 @@ Agregar /usr/local/go/bin  a la variable de entorno PATH
     export PATH=$PATH:/usr/local/go/bin
 </pre>
 
-<h3> Hello world </h3>
+<h3> Hola Mundo </h3>
 <p>
-    Crear un archivo llamado  hello.go and copiar el siguiente c&oacute;digo:
+    Creamos un archivo llamado  hello.go and copiar el siguiente c&oacute;digo:
 </p>
 <pre>
   package main
@@ -60,11 +58,11 @@ Ejecutar el programa:
 </pre>
 
 
-<h2> Simple Website </h2>
+<h2>Sitio Web Sencillo</h2>
 
 <p>
 Usaremos el paquete standar 
-<a href="http://golang.org/pkg/net/http/">http package </a>  para escribir un servidor httpr, para lo que crearemos un archivo 
+<a href="http://golang.org/pkg/net/http/">http </a>  para escribir un servidor http, para lo que crearemos un archivo 
  llamado server.go y agregaremos lo siguiente:
 </p>
 
@@ -122,7 +120,7 @@ Ahora agregaremos el c&oacute;digo que manejar&acute; las peticiones http y reto
     func viewHandler(w http.ResponseWriter, r *http.Request) {
         title := r.URL.Path[len("/view/"):]
         p, _ := loadPage(title)
-        fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", p.Title, p.Body)
+        fmt.Fprintf(w, "%s", p.Body)
     }
 
 </pre>
@@ -155,7 +153,7 @@ Finalmente, agregamos el m&eacute;todo principal donde creamos el servidor http:
 El c&oacute;digo fuente pued ser encontrado en    <a href="https://github.com/maigfrga/blog/tree/master/2014/12/go-intro">   este enlace </a>
 </p>
 
-<h2> References</h2>
+<h2> Referencias</h2>
 
 <ul>
     <li>
@@ -183,6 +181,6 @@ El c&oacute;digo fuente pued ser encontrado en    <a href="https://github.com/ma
        <a href="http://www.golang-book.com/"> An Introduction to Programming in Go. </a>
     </li>
     <li>
-       <li href="http://blog.golang.org/go-slices-usage-and-internals"> Go Slices: usage and internals </li>
+       <a href="http://blog.golang.org/go-slices-usage-and-internals"> Go Slices: usage and internals </a>
     </li>
 </ul>
