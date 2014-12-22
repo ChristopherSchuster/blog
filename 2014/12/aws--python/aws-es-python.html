@@ -1,0 +1,398 @@
+<p>
+    This post is about how to create an ec2 ubuntu 14.04 AWS instance using python.
+</p>
+
+
+<h2> PYTHON BOTO </h2>
+
+<p>
+ <a href="http://docs.pythonboto.org/en/latest/"> boto  is a python interface to Amazon Web Services</a>, it is widely used and it has good
+ documentation. The first step is to install the library:
+</p>
+
+<pre>
+    $pip install boto
+</pre>
+
+<h3>Boto Configuration</h3>
+
+
+<P>
+ Create a ~/.boto file with these contents:
+</p>
+
+<pre>
+    [Credentials]
+    aws_access_key_id = YOURACCESSKEY
+    aws_secret_access_key = YOURSECRETKEY
+</pre>
+
+<h3> Getting started with boto </h3>
+
+<pre>
+    >>> import boto.ec2
+
+    >>> for region in  boto.ec2.regions():
+    ...     print region
+    ... 
+    RegionInfo:us-east-1
+    RegionInfo:cn-north-1
+    RegionInfo:ap-northeast-1
+    RegionInfo:eu-west-1
+    RegionInfo:ap-southeast-1
+    RegionInfo:ap-southeast-2
+    RegionInfo:us-west-2
+    RegionInfo:us-gov-west-1
+    RegionInfo:us-west-1
+    RegionInfo:eu-central-1
+    RegionInfo:sa-east-1
+
+    >>> ec2 = boto.ec2.connect_to_region('us-west-2')
+
+    >>> for zone in  ec2.get_all_zones():
+    ...     print zone
+    ... 
+    Zone:us-west-2a
+    Zone:us-west-2b
+    Zone:us-west-2c
+
+
+    >>> for sec in ec2.get_all_security_groups():
+    ...     print sec
+    ... 
+    SecurityGroup:default
+
+</pre>
+
+
+<h3> Creating Security Groups </h3>
+
+<p>
+    We can create a  python script that gets or creates a security group by name:
+</p>
+
+<pre>
+    import boto
+    import boto.ec2
+
+    import argparse
+
+
+    def get_or_create_security_group(region ,group_name):
+        """
+        Search by group_name, if doesn't exits, it is created
+        """
+        try:
+            ec2 = boto.ec2.connect_to_region(region)
+            group = ec2.get_all_security_groups(groupnames=[group_name])[0]
+        except ec2.ResponseError, e:
+            if e.code == 'InvalidGroup.NotFound':
+                group = ec2.create_security_group(
+                    group_name, 'group {} for region {}'.format(group_name, region))
+            else:
+                raise
+        return group
+
+
+    def main():
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--name', required=True)
+        parser.add_argument('--region',  default='us-west-2')
+        args = parser.parse_args()
+        print get_or_create_security_group(args.region, args.name)
+
+
+    if __name__ == '__main__':
+        main()
+
+</pre>
+
+<p>
+    We can call this script and create a chef group:
+</p>
+
+
+<pre>
+  python create_security_group.py --name=my-chef-group  --region=us-west-2
+</pre>
+
+<p>
+    After that we can grant access to certain cidr addresses with the script below:
+</p>
+
+<pre>
+
+    import boto
+    import boto.ec2
+
+    import argparse
+
+
+    def revoque_from_security_group(
+            ip_protocol='tcp', region='us-west-2', name=None, from_port=None,
+            to_port=None, cidr_ip=None):
+        """
+        Authorize cidr_ip access to a certain security group
+        """
+        ec2 = boto.ec2.connect_to_region(region)
+        group = ec2.get_all_security_groups(groupnames=[name])[0]
+        return group.authorize(ip_protocol=ip_protocol, from_port=from_port, to_port=to_port, cidr_ip=cidr_ip)
+
+
+    def main():
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--name', required=True)
+        parser.add_argument('--region',  default='us-west-2')
+        parser.add_argument('--ip_protocol', default='tcp')
+        parser.add_argument('--from_port', required=True)
+        parser.add_argument('--to_port', required=True)
+        parser.add_argument('--cidr_ip', required=True)
+        args = parser.parse_args()
+        print revoque_from_security_group(
+            ip_protocol=args.ip_protocol, region=args.region, name=args.name,
+            from_port=args.from_port, to_port=args.to_port, cidr_ip=args.cidr_ip)
+
+
+    if __name__ == '__main__':
+        main()
+</pre>
+
+<p>
+   Now We can grant ssh access to the chef group:
+</p>
+<pre>
+  python autorize_security_group.py --name=chef-group --ip_protocol=tcp --from_port=22 --to_port=22 --cidr_ip=my_ip/32 --region=us-west-2
+</pre>
+
+<p>
+ We can revoke access to the group with the script below:
+</p>
+
+<pre>
+
+    import boto
+    import boto.ec2
+
+    import argparse
+
+
+    def revoque_from_security_group(
+            ip_protocol='tcp', region='us-west-2', name=None, from_port=None,
+            to_port=None, cidr_ip=None):
+        """
+        Revoque cidr_ip access to a certain security group
+        """
+        ec2 = boto.ec2.connect_to_region(region)
+        group = ec2.get_all_security_groups(groupnames=[name])[0]
+        return group.revoke(ip_protocol=ip_protocol, from_port=from_port, to_port=to_port, cidr_ip=cidr_ip)
+
+
+    def main():
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--name', required=True)
+        parser.add_argument('--region',  default='us-west-2')
+        parser.add_argument('--ip_protocol', default='tcp')
+        parser.add_argument('--from_port', required=True)
+        parser.add_argument('--to_port', required=True)
+        parser.add_argument('--cidr_ip', required=True)
+        args = parser.parse_args()
+        print revoque_from_security_group(
+            ip_protocol=args.ip_protocol, region=args.region, name=args.name,
+            from_port=args.from_port, to_port=args.to_port, cidr_ip=args.cidr_ip)
+
+
+    if __name__ == '__main__':
+        main()
+</pre>
+
+<p>
+    We can revoke ssh access to chef group whenever We want:
+</p>
+
+<p>
+    python revoke_security_group.py --name=chef-group --ip_protocol=tcp --from_port=22 --to_port=22 --cidr_ip=my_ip/32 --region=us-west-2
+</p>
+
+<h3> Creating ssh keypairs </h3>
+<p>
+    We need a ssh keypair in order to access ec2 instances. Keypairs are by region, that means we need a keypair for every region where We want
+    to create ec2 instances, we can create a keypair with the script  below:
+</p>
+
+
+<pre>
+    import boto
+    import boto.ec2
+
+    import argparse
+
+
+    def get_or_create_key_pair(key_name=None, key_dir='~/.ssh', region='us-west-2'):
+        try:
+            ec2 = boto.ec2.connect_to_region(region)
+            key = ec2.get_all_key_pairs(keynames=[key_name])
+        except ec2.ResponseError, e:
+            if e.code == 'InvalidKeyPair.NotFound':
+                # Create an SSH key to use when logging into instances.
+                key =  ec2.create_key_pair(key_name)
+                if not key.save(key_dir):
+                    print('Key could not be created\n')
+                    raise
+            else:
+                raise
+        return key
+
+
+    def main():
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument('--key_name', required=True)
+        parser.add_argument('--key_dir', required=False)
+        parser.add_argument('--region',  default='us-west-2')
+        args = parser.parse_args()
+
+        key = get_or_create_key_pair(
+            key_name=args.key_name, key_dir=args.key_dir, region=args.region)
+
+        print(key)
+
+    if __name__ == '__main__':
+        main()
+
+</pre>
+
+
+<pre>
+  python create_key_pair.py --region=us-west-2 --key_name=manuel_uswest2 --key_dir='~/.ssh'
+</pre>
+
+
+<h3> Creating EBS Volume</h3>
+
+<p>
+Now we need to create the ebs volume that will be attached to the EC2 instance, We can use the script below:
+</p>
+
+<pre>
+
+    import boto
+    import boto.ec2
+
+    import argparse
+
+
+    def create_volume(
+            region='us-west-2', zone='us-west-2a', size_gb=None, snapshot=None,
+            volume_type='standard', iops=None, dry_run=False):
+
+        ec2 = boto.ec2.connect_to_region(region)
+        v = ec2.create_volume(
+            size_gb, zone, snapshot=snapshot, volume_type=volume_type, iops=iops,
+            dry_run=dry_run)
+        return v
+
+
+    def main():
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument('--size_gb', type=int,required=True)
+        parser.add_argument('--region',  default='us-west-2')
+        parser.add_argument('--zone', default='us-west-2a')
+        parser.add_argument('--volume_type',  default='standard')
+        parser.add_argument('--snapshot')
+        args = parser.parse_args()
+        v = create_volume(
+            region=args.region, zone=args.zone, size_gb=args.size_gb,
+            snapshot=args.snapshot, volume_type=args.volume_type)
+        print(v)
+
+    if __name__ == '__main__':
+        main()
+</pre>
+
+
+
+<pre>
+  $python create_ebs_volume.py --region=us-west-2 --zone=us-west-2a --size_gb=10 --volume_type=standard
+
+  Volume:vol-d543d3a1
+</pre>
+
+<h3> Creating EC2 Instance </h3>
+<p>
+    First at all, We need to choose an AMI image, in that case we will use the AMI for ubuntu 14.04 with code <strong>ami-e55100d5 </strong>
+    <a href=""> you can see at this link all ubuntu AMIS available by version and region. </a>
+</p>
+
+<p>
+    After choosing the rigth AMI You can use the script bellow to create the instance:
+</p>
+
+<pre>
+    $python launch_instance.py --region=us-west-2 --ami=ami-e55100d5 --instance_type=t1.micro --key_name=manuel_uswest2 --tag=mychefserver --group_name=chef- --ssh_port=22 --cidr_ip=37.46.83.126/32 
+
+    .
+    .
+    .
+    Instance:i-5da46734
+</pre>
+
+
+<h3> Attach Volume to instance </h3>
+
+<p>
+    AWS instances have a root hard drive, but when an instance is stopped the root volume associated to that instance dissapears.
+    In order to keep important data save is important attach an additional volume. We can do that with the script below:
+</p>
+
+<pre>
+
+    import boto
+    import boto.ec2
+
+    import argparse
+
+
+    def attach_volume(
+            region='us-west-2', volume_id=None, instance_id=None,
+            device_name='sdb'):
+
+        ec2 = boto.ec2.connect_to_region(region)
+        volume = ec2.get_all_volumes(volume_ids=volume_id)[0]
+        volume.attach(instance_id, device_name)
+        return volume
+
+    def main():
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument('--region',  default='us-west-2')
+        parser.add_argument('--volume_id',  required=True)
+        parser.add_argument('--instance_id',  required=True)
+        parser.add_argument('--device_name',  default='sdb')
+
+        args = parser.parse_args()
+        v = attach_volume(
+            region=args.region, volume_id=args.volume_id,
+            device_name=args.device_name, instance_id=args.instance_id)
+        print(v)
+
+    if __name__ == '__main__':
+        main()
+</pre>
+
+
+<pre>
+    $python attach_volume.py --region=us-west-2 --volume_id=vol-d543d3a1 --instance_id=i-5da46734 --device_name=sdb
+</pre>
+
+<p>
+    The code for this post can be found at this <a href=""> link </a>
+</p>
+
+<h2> References </h2>
+
+<ul>
+    <li> <a href="http://cloud-images.ubuntu.com/trusty/current/"> Ubuntu AMI List </a> </li>
+    <li><a href="http://www.maigfrga.ntweb.co/introduccion-amazon-aws-ec2/"> Amazon AWS EC2 Introduction   </a>  </li>
+    <li> <a href="http://docs.pythonboto.org/en/latest/"> Python Boto documentation</li>
+</ul>
