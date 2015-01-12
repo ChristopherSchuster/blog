@@ -1,0 +1,284 @@
+<p>
+    Este post muestra como instalar
+   <a href="http://www.maigfrga.ntweb.co/introduccion-chef-server/"> 
+    chef server </a> en una
+   <a href="http://www.maigfrga.ntweb.co/introduccion-aws-ec2-y-python/">instancia EC2 de Amazon </a>
+
+    usando <a href="http://www.fabfile.org/"> la librer&iacute;a de python fabric</a>
+</p>
+
+<h2> Creando la instancia EC2 </h2>
+
+<p>
+    <a href="http://www.maigfrga.ntweb.co/introduccion-aws-ec2-y-python/">En este enlace  </a> se encuentran las instrucciones para crear una instancia
+    EC2 usando  python
+</p>
+
+<h2> Instando Chef server usando Fabric</h2>
+
+<p>
+    <a href="http://www.fabfile.org/">Fabric</a> is una 
+    librer&iacute;a y herramienta de l&iacute;nea de comandos
+     escrita en python que ha sido dise&ntilde;ada para facilitar el
+     despliegue de aplicaciones y administraci&oacute;n remota
+     via SSH.
+</p>
+
+<h3> Instalando Fabric</h3>
+
+<pre>
+    pip install fabric
+</pre>
+
+
+<h3> Primeros pasos con  fabric </h3>
+
+<p> Crearemos un archivo llamado <code> fabfile.py</code> 
+en el cual adicionaremos c&oacute;digo para ver el tipo de linux
+que hemos instalado:
+</p>
+
+<pre>
+    from fabric.api import run
+
+    def host_type():
+        run('uname -s')
+</pre>
+
+<p>
+    Ahora ejecutaremos el comando <code> fab </code> :
+</p>
+<pre>
+    $fab show_host_type  -i ~/.ssh/my_key.pem --host ec2-36-37-35-346.us-west-2.compute.amazonaws.com -u ubuntu
+    [ec2-36-37-35-346.us-west-2.compute.amazonaws.com] Executing task 'show_host_type'
+    [ec2-36-37-35-346.us-west-2.compute.amazonaws.com] run: uname -s
+    [ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: Linux
+    [ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: 
+
+
+Done.
+</pre>
+
+
+<h3> Encrypting EC2 Volume</h3>
+
+<p>
+   Componentes de Chef tales como  recipes, databags, etc, usualmente
+   almacenan informaci&oacute;n confidencial a cerca de nuestra 
+   infraestructura, por este motivo encriptaremos el volumen
+   que hemos agregado en el primer paso 
+   <a href="http://www.maigfrga.ntweb.co/introduccion-aws-ec2-y-python/"> 
+    creando una instancia ec2 usando python. </a>
+</p>
+
+
+<p>
+    En este ejemplo encriptaremos el dispositivo ubicado en 
+    <code> /dev/xvdf </code>  usando al librer&iacute;a luks. El primer
+    paso es habilitar la encripci&oacute;n en el dispositivo, para esto
+    agregaremos otra tarea en el archivo fab:
+</p>
+
+<pre>
+    def setup_luks(device):
+        cmd  = 'sudo cryptsetup -y --cipher blowfish luksFormat {}'.format(device)
+        run(cmd)
+
+</pre>
+
+<pre>
+fab setup_luks:'/dev/xvdf' -i ~/.ssh/my_key.pem --host ec2-36-37-35-346.us-west-2.compute.amazonaws.com -u ubuntu
+
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] Executing task 'setup_luks'
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] run: sudo cryptsetup -y --cipher blowfish luksFormat /dev/xvdf
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: 
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: WARNING!
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: ========
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: This will overwrite data on /dev/xvdf irrevocably.
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: 
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: Are you sure? (Type uppercase yes): YES
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: Enter passphrase: 
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: Verify passphrase: 
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: 
+
+
+Done.
+Disconnecting from ec2-54-69-12-111.us-west-2.compute.amazonaws.com... done.
+
+</pre>
+
+
+<p>
+    El siguiente paso es verificar el dispositivo, para hacer esto
+    agregaremos otra tarea al archivo fab:
+</p>
+
+<pre>
+    def verify_luks_device(device):
+        cmd = 'sudo file -s {0}'.format(device)
+        run(cmd)
+</pre>
+
+<pre>
+    fab verify_luks_device:'/dev/xvdf' -i ~/.ssh/my_key.pem --host ec2-36-37-35-346.us-west-2.compute.amazonaws.com -u ubuntu
+
+[ec2-54-69-12-111.us-west-2.compute.amazonaws.com] Executing task 'verify_luks_device'
+[ec2-54-69-12-111.us-west-2.compute.amazonaws.com] run: sudo file -s /dev/xvdf
+[ec2-54-69-12-111.us-west-2.compute.amazonaws.com] out: /dev/xvdf: LUKS encrypted file, ver 1 [blowfish, cbc-plain, sha1] UUID: e20d71a4-0a4a-43ba-84cc-1ab3470e845f
+
+</pre>
+
+<p>
+    Ahora que ya tenemos un dispositivo v&aacute;lido, el siguiente paso
+    es abrirlo, para esto agregaremos otra tarea:
+</p>
+
+<pre>
+    def open_luks_device(device, storedev):
+        cmd = 'sudo cryptsetup luksOpen {} {}'.format(device, storedev)
+        run(cmd)
+
+</pre>
+
+
+<pre>
+    fab open_luks_device:'/dev/xvdf,mydevice' -i ~/.ssh/my_key.pem --host ec2-36-37-35-346.us-west-2.compute.amazonaws.com -u ubuntu
+
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] Executing task 'open_luks_device'
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] run: sudo cryptsetup luksOpen /dev/xvdf myvol
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: Enter passphrase for /dev/xvdf: 
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: 
+</pre>
+
+<p>
+    Ahora que tenemos el dispositivo mapeado en /dev/mapper/mydevice, 
+    el siguiente paso es formatearlo:
+</p>
+
+<pre>
+    def format_luks_device(storedev):
+        run('sudo mkfs.ext4 -m 0 /dev/mapper/{}'.format(storedev))
+</pre>
+
+<pre>
+    fab format_luks_device:'mydevice' -i ~/.ssh/my_key.pem --host ec2-36-37-35-346.us-west-2.compute.amazonaws.com -u ubuntu
+
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] Executing task 'format_luks_device'
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] run: sudo mkfs.ext4 -m 0 /dev/mapper/mydevice
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: mke2fs 1.42.9 (4-Feb-2014)
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: Filesystem label=
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: OS type: Linux
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: Block size=4096 (log=2)
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: Fragment size=4096 (log=2)
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: Stride=0 blocks, Stripe width=0 blocks
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: 655360 inodes, 2620928 blocks
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: 0 blocks (0.00%) reserved for the super user
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: First data block=0
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: Maximum filesystem blocks=2684354560
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: 80 block groups
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: 32768 blocks per group, 32768 fragments per group
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: 8192 inodes per group
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: Superblock backups stored on blocks: 
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out:         32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: 
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: Allocating group tables: done                            
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: Writing inode tables: done                            
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: Creating journal (32768 blocks): done
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: Writing superblocks and filesystem accounting information: done 
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: 
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] out: 
+</pre>
+
+
+<p>
+    Ahora debemos generar una copia del encabezado luks y almacenarlo
+    en nuestro pc:
+
+</p>
+
+<pre>
+    def backup_luks_header_device(device):
+        run('sudo cryptsetup luksHeaderBackup --header-backup-file /home/ubuntu/luksbackup {}'.format(device))
+        run('sudo chown ubuntu /home/ubuntu/luksbackup')
+        get('/home/ubuntu/luksbackup', './')
+        run('sudo rm /home/ubuntu/luksbackup')
+</pre>
+
+
+<pre>
+fab backup_luks_header_device:'/dev/xvdf' -i ~/.ssh/mykey.pem --host ec2-36-37-35-346.us-west-2.compute.amazonaws.com -u ubuntu                                                                                                                                                                         
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] Executing task 'backup_luks_header_device'                                                                                                   
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] run: sudo cryptsetup luksHeaderBackup --header-backup-file /home/ubuntu/luksbackup /dev/xvdf                                                 
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] run: sudo chown ubuntu /home/ubuntu/luksbackup                                                                                               
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] download: /home/manuel/src/blog/2015/01/chef-aws-python/luksbackup <- /home/ubuntu/luksbackup                                                
+
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] run: rm /home/ubuntu/luksbackup
+</pre>
+
+<p>
+    El &uacute;ltimo paso es montar el volumen:
+</p>
+
+<pre>
+    def mount_luks_device(storedev, mount_point, owner):
+        run('sudo mkdir -p {}'.format(mount_point))
+        run('sudo mount /dev/mapper/{} {}'.format(storedev, mount_point))
+        run('sudo chown {} {}'.format(owner, mount_point))
+</pre>
+
+
+<pre>
+fab mount_luks_device:'mydevice,/secure,ubuntu' -i ~/.ssh/mykey.pem --host ec2-36-37-35-346.us-west-2.compute.amazonaws.com -u ubuntu
+
+
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] Executing task 'mount_luks_device'
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] run: sudo mkdir -p /secure
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] run: sudo mount /dev/mapper/mydevice /secure
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] run: sudo chown ubuntu /secure
+
+</pre>
+
+
+<p>
+    El dispositivo puede ser desmontando ejecutando la siguiente tarea:
+</p>
+
+
+<pre>
+    def unmount_luks_device(storedev, mount_point):
+        run('sudo umount {}'.format(mount_point))
+        run('sudo cryptsetup luksClose {}'.format(storedev))
+</pre>
+
+
+<pre>
+    fab unmount_luks_device:'mydevice,/secure' -i ~/.ssh/mykey.pem --host ec2-36-37-35-346.us-west-2.compute.amazonaws.com -u ubuntu
+
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] Executing task 'unmount_luks_device'
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] run: sudo umount /secure
+[ec2-36-37-35-346.us-west-2.compute.amazonaws.com] run: sudo cryptsetup luksClose mydevice
+</pre>
+
+
+<h3> Instalar Chef Server</h3>
+
+<p>
+    El objetivo es automatizar los pasos requeridos para la
+    <a href="http://www.maigfrga.ntweb.co/introduccion-chef-server/">
+      instalaci&oacute;n de  chef server
+    </a>
+</p>
+
+
+<pre>
+    def install_chef_server():
+        run('sudo apt-get install ruby')
+        run(' wget  https://web-dl.packagecloud.io/chef/stable/packages/ubuntu/trusty/chef-server-core_12.0.1-1_amd64.deb')
+        run('sudo dpkg -i /home/ubuntu/chef-server-core_12.0.1-1_amd64.deb')
+        run('sudo chef-server-ctl reconfigure')
+</pre>
+
+
+<p>
+    The  <code>fabfile.py </code>  can be fount <a href=""> at this link </a>
+</p>

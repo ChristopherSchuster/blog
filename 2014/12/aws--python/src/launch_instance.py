@@ -10,7 +10,7 @@ from create_key_pair import get_or_create_key_pair
 def launch_instance(
         ami=None, instance_type='t1.micro', key_name=None, key_dir='~/.ssh',
         group_name=None, ssh_port=22, cidr_ip=None, tag=None,
-        region='us-west-2'):
+        region='us-west-2', placement='us-west-2a'):
     """
     Launch an instance and wait for it to start running.
     """
@@ -29,7 +29,7 @@ def launch_instance(
             raise
 
     # http://docs.pythonboto.org/en/latest/ref/ec2.html?highlight=run_instances#boto.ec2.connection.EC2Connection.run_instances
-    reservation = ec2.run_instances(ami, key_name=key_name,
+    reservation = ec2.run_instances(ami, key_name=key_name, placement=placement,
                                      security_groups=[group_name],
                                      instance_type=instance_type)
 
@@ -65,6 +65,7 @@ def main():
     parser.add_argument('--ssh_port', type=int, required=False, default=22)
     parser.add_argument('--cidr_ip', required=True)
     parser.add_argument('--region',  default='us-west-2')
+    parser.add_argument('--placement',  default='us-west-2a')
     args = parser.parse_args()
 
     instance = launch_instance(
@@ -72,7 +73,7 @@ def main():
         key_name=args.key_name, key_dir=args.key_dir,
         group_name=args.group_name,
         ssh_port=args.ssh_port, cidr_ip=args.cidr_ip,
-        tag=args.tag, region=args.region)
+        tag=args.tag, region=args.region, placement=args.placement)
 
     print(instance)
 

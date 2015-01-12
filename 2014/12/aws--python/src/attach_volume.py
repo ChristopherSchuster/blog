@@ -6,7 +6,7 @@ import argparse
 
 def attach_volume(
         region='us-west-2', volume_id=None, instance_id=None,
-        device_name='sdb'):
+        device_name='/dev/xvdf'):
 
     ec2 = boto.ec2.connect_to_region(region)
     volume = ec2.get_all_volumes(volume_ids=volume_id)[0]

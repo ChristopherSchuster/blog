@@ -329,7 +329,7 @@ Now we need to create the ebs volume that will be attached to the EC2 instance, 
 </p>
 
 <pre>
-    $python launch_instance.py --region=us-west-2 --ami=ami-e55100d5 --instance_type=t1.micro --key_name=manuel_uswest2 --tag=mychefserver --group_name=chef- --ssh_port=22 --cidr_ip=37.46.83.126/32 
+    $python launch_instance.py --region=us-west-2 --ami=ami-e55100d5 --instance_type=t1.micro --key_name=mykey --tag=mychefserver --group_name=chef --ssh_port=22 --cidr_ip=145.56.64.54/32 
 
     .
     .
@@ -355,7 +355,7 @@ Now we need to create the ebs volume that will be attached to the EC2 instance, 
 
     def attach_volume(
             region='us-west-2', volume_id=None, instance_id=None,
-            device_name='sdb'):
+            device_name='/dev/sdb'):
 
         ec2 = boto.ec2.connect_to_region(region)
         volume = ec2.get_all_volumes(volume_ids=volume_id)[0]
@@ -382,8 +382,9 @@ Now we need to create the ebs volume that will be attached to the EC2 instance, 
 
 
 <pre>
-    $python attach_volume.py --region=us-west-2 --volume_id=vol-d543d3a1 --instance_id=i-5da46734 --device_name=sdb
+    $python attach_volume.py --region=us-west-2 --volume_id=vol-d543d3a1 --instance_id=i-5da46734 --device_name=/dev/xvdf
 </pre>
+
 
 <p>
     The code for this post can be found at this <a href="https://github.com/maigfrga/blog/tree/master/2014/12/aws--python/src"> link </a>
