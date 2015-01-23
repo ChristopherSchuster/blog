@@ -1,0 +1,170 @@
+<p>
+    <a href="https://aws.amazon.com/sqs/"> 
+    Amazon Simple Queue Service (Amazon SQS) </a> is a distributed queue
+    messaging that supports programmatic sending of messages via web service
+    applications as a way to communicate over the Internet.
+    This post is about how to use this service.
+</p>
+
+<h2> Creating Admin Security group and User </h2>
+<p>
+    It is a good security practice create an
+    admin group and a user associated to this group. this user will be
+    responsable for administrative task such as create or delete queues.
+</p>
+
+<h3> Creating Admins group </h3>
+
+<pre>
+  aws iam create-group --group-name Admins
+</pre>
+
+<h3> Setting admin access rule for Admin group</h3>
+
+<p>
+    We must define a policy that contains a set of permissions and then
+    assing that policy to a certain group, to create admin
+    policiy first at all, we must create a file named admin-policy.json
+    and paste the code below:
+</p>
+
+<pre>
+    {
+      "Version": "2012-10-17",
+      "Statement": [{
+        "Effect": "Allow",
+        "Action": ["*"],
+        "Resource": ["*"]
+      }]
+    }
+</pre>
+
+<p>
+    Now we can asign the policy definied in the json file to Admins group:
+</p>
+
+<pre>
+    aws iam put-group-policy --group-name Admins --policy-document file://AdminPolicy.json --policy-name AdminRoot
+</pre>
+
+
+<h3> Creating Admin User </h3>
+
+<p>
+    After create Admins group is good idea to create an admin user and associate this user
+    to Admins group, is not recommended use AWS with your main aws access keys.
+</p>
+
+<pre>
+  aws iam create-user  --user-name mycloudadmin
+  aws iam add-user-to-group --user-name mycloudadmin --group-name Admins
+</pre>
+
+
+
+<h2> SQS and aws-cli </h2>
+
+<p>
+    By typing <code> aws sqs help</code> We can see all options available for this
+    service, We can create a queue with the command below:
+</p>
+
+<pre>
+    aws sqs create-queue --queue-name MyQueue --region us-west-2
+
+</pre>
+
+<p>
+    We can verify the queue creation with the command <code>aws sqs list-queues</code>
+</p>
+
+<h2> Creating an User with limited access to the queue </h2>
+
+<p>
+    First at all We need to create a group named webapp:
+</p>
+
+
+
+<h3> Setting admin access rule for webapp group</h3>
+
+<p>
+    We want to give reading SQS access to webapp:
+</p>
+
+<pre>
+  aws iam create-group --group-name webapp
+</pre>
+
+
+<p>
+    We will set up an access policy to allow webapp group read, put and delete messages
+    from MyQueue, we will create a sqs-policy.json file:
+</p>
+
+<pre>
+{
+   "Version":"2012-10-17",
+   "Statement" : [
+      {
+         "Effect":"Allow",
+         "Action":["SQS:SendMessage",
+                   "SQS:ReceiveMessage", "SQS:DeleteMessage"],
+         "Resource":"arn:aws:sqs:*:123456789012:MyQueue"
+      }
+   ]
+}
+</pre>
+
+
+<p>
+    <strong> You must change the resource arn according your own data
+    ,the format is arn:aws:sqs:region:account_ID:queue_name  </strong>
+</p>
+
+<pre>
+    aws iam put-group-policy --group-name webapp --policy-document file://sqs-policy.json --policy-name webappSQS
+</pre>
+
+<h3> Creating the user </h3>
+<pre>
+  aws iam create-user  --user-name myweb
+  aws iam create-access-key --user-name myweb
+  aws iam add-user-to-group --user-name myweb --group-name webapp
+</pre>
+
+
+
+<h2> Sending a message to the queue </h2>
+
+<pre>
+    aws sqs  send-message --queue-url https://us-west-2.queue.amazonaws.com/123456789012/MyQueue --message-body '{"msg": "hello world"}'
+</pre>
+
+
+<h2> Reading a message from the queue</h2>
+
+<pre>
+    aws sqs  receive-message --queue-url https://us-west-2.queue.amazonaws.com/123456789012/MyQueue --max-number-of-messages 10
+</pre>
+
+<h2> References </h2>
+
+<ul>
+    <li>
+        <a href="https://en.wikipedia.org/wiki/Amazon_Simple_Queue_Service"> Wikipedia </a>
+    </li>
+    <li>
+         <a href="http://docs.aws.amazon.com/IAM/latest/UserGuide/IAMGettingStarted.html">
+            AWS Identity and Access Management (IAM)  
+         </a>
+    </li>
+    <li>
+        <a href="http://docs.aws.amazon.com/IAM/latest/UserGuide/PoliciesOverview.html">Overview of AWS IAM Policies  </a>
+    </li>
+    <li>
+        <a href="https://aws.amazon.com/sqs/">
+          Amazon SQS
+        </a>
+    </li>
+</ul>

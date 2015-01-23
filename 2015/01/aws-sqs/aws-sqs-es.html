@@ -1,0 +1,165 @@
+<p>
+    <a href="https://aws.amazon.com/sqs/"> 
+    Amazon Simple Queue Service (Amazon SQS) </a>  es una cola distribuida
+     de mensajes que soporta envio y recepci&oacute;n de mensajes a 
+     trav&eacute;s de Internet como una forma de comunicaci&oacute;n
+     entre aplicaciones. Este post muestra como usar este servicio.
+</p>
+
+<h2> Creando Grupo y usuario Admin </h2>
+<p>
+    Es buena pr&aacute;ctica de seguridad
+    crear un grupo admin y un usuario asociado a este grupo, este usuario
+    ser&aacute; responsable de tareas administrativas como crear o
+    borrar colas.
+</p>
+
+<h3> Crear grupo Admins </h3>
+
+<pre>
+  aws iam create-group --group-name Admins
+</pre>
+
+<h3> Definir reglas de acceso</h3>
+
+<p>
+    Debemos definir una pol&iacute;tica de acceso que contenga permisos
+    y asignarla a uno o m&aacute;s grupos, para esto crearemos un 
+    archivo llamado admin-policy.json
+</p>
+
+<pre>
+    {
+      "Version": "2012-10-17",
+      "Statement": [{
+        "Effect": "Allow",
+        "Action": ["*"],
+        "Resource": ["*"]
+      }]
+    }
+</pre>
+
+<p>
+    Ahora podemos asignar la pol&iacute;tica al grupo admins:
+</p>
+
+<pre>
+    aws iam put-group-policy --group-name Admins --policy-document file://AdminPolicy.json --policy-name AdminRoot
+</pre>
+
+
+<h3> Crear usuario Admin </h3>
+
+<p>
+    Ahora podemos crear un usuario y asignarle permisos de administraci&oacute;n, no es recomendable usar las credenciales principales de la cuenta.
+</p>
+
+<pre>
+  aws iam create-user  --user-name mycloudadmin
+  aws iam add-user-to-group --user-name mycloudadmin --group-name Admins
+</pre>
+
+<h2> SQS y aws-cli </h2>
+
+<p>
+ Podemos usar el comando <code> aws sqs help</code>  para ver
+ todas las opciones disponibles, podemos crear una cola con el siguiente
+ comando:
+</p>
+
+<pre>
+    aws sqs create-queue --queue-name MyQueue --region us-west-2
+
+</pre>
+
+<p>
+    Podemos verificar la creaci&oacute;n de la cola con el comando
+     <code>aws sqs list-queues</code>
+</p>
+
+
+<h2> Crear un usuario con acceso limitado a la cola </h2>
+
+<p>
+   Primero que todo crearemos un grupo llamado webapp:
+</p>
+
+
+<pre>
+  aws iam create-group --group-name webapp
+</pre>
+
+
+<p>
+    El siguiente paso es definir una pol&iacute;tica de acceso 
+    que permita al grupo webapp  acceder a la cola, para tal fin
+    creamos un archivo llamados qs-policy.json :
+</p>
+
+<pre>
+{
+   "Version":"2012-10-17",
+   "Statement" : [
+      {
+         "Effect":"Allow",
+         "Action":["SQS:SendMessage",
+                   "SQS:ReceiveMessage", "SQS:DeleteMessage"],
+         "Resource":"arn:aws:sqs:*:123456789012:MyQueue"
+      }
+   ]
+}
+</pre>
+
+
+<p>
+    <strong>Resource debe ser cambiado de acuerdo al c&oacute;digo de cada cuenta, el formato es arn:aws:sqs:region:account_ID:queue_name  </strong>
+</p>
+
+
+<pre>
+    aws iam put-group-policy --group-name webapp --policy-document file://sqs-policy.json --policy-name webappSQS
+</pre>
+
+<h3> Creando el usuario </h3>
+<pre>
+  aws iam create-user  --user-name myweb
+  aws iam create-access-key --user-name myweb
+  aws iam add-user-to-group --user-name myweb --group-name webapp
+</pre>
+
+
+<h2> Enviando un mensaje a la cola </h2>
+
+<pre>
+    aws sqs  send-message --queue-url https://us-west-2.queue.amazonaws.com/123456789012/MyQueue --message-body '{"msg": "hello world"}'
+</pre>
+
+
+<h2> Leyendo un mensaje de la cola</h2>
+
+<pre>
+    aws sqs  receive-message --queue-url https://us-west-2.queue.amazonaws.com/123456789012/MyQueue --max-number-of-messages 10
+</pre>
+
+<h2> Referencias </h2>
+
+<ul>
+    <li>
+        <a href="https://en.wikipedia.org/wiki/Amazon_Simple_Queue_Service"> Wikipedia </a>
+    </li>
+    <li>
+         <a href="http://docs.aws.amazon.com/IAM/latest/UserGuide/IAMGettingStarted.html">
+            AWS Identity and Access Management (IAM)  
+         </a>
+    </li>
+    <li>
+        <a href="http://docs.aws.amazon.com/IAM/latest/UserGuide/PoliciesOverview.html">Overview of AWS IAM Policies  </a>
+    </li>
+    <li>
+        <a href="https://aws.amazon.com/sqs/">
+          Amazon SQS
+        </a>
+    </li>
+</ul>
+
+

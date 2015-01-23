@@ -1,0 +1,11 @@
+{
+   "Version":"2012-10-17",
+   "Statement" : [
+      {
+         "Effect":"Allow",
+         "Action":["SQS:SendMessage",
+                   "SQS:ReceiveMessage", "SQS:DeleteMessage"],
+         "Resource":"arn:aws:sqs:*:123456789012:MyQueue"
+      }
+   ]
+}
