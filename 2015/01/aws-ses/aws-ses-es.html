@@ -1,0 +1,82 @@
+<p>
+    <a href="https://aws.amazon.com/ses/"> Amazon SES </a> es un servicio
+    que permite a ususarios de AWS users enviar correo electr&oacute;nico.
+    Este post es una introducci&oacute;n a este servicio.
+</p>
+
+<h2> Verificando tu email </h2>
+
+<p>
+    AWS requiere la verficaci&oacute;n de cada email que se desee usar
+    como remitente de correos, el proceso es simple, instrucciones detalladas
+    pueden ser encontradas en el siguiente enlace:
+    <a href="http://docs.aws.amazon.com/ses/latest/DeveloperGuide/verify-email-addresses.html"> Verificando direcciones de en Amazon SES </a>
+</p>
+
+
+<h2>>Asignar permisos de envio a un grupo</h2>
+
+<p>
+    Es buena idea tener diferentes grupos para diferentes tareas, a
+    continuaci&oacute;n una pol&iacute;tica de seguridad que
+    otorga acceso a SES para un grupo:
+</p>
+
+<pre>
+    {
+        "Version": "2012-10-17",
+        "Statement":[{
+           "Effect":"Allow",
+           "Action":["ses:SendEmail", "ses:SendRawEmail"],
+           "Resource":"*"
+           }
+        ]
+     }
+</pre>
+
+
+<p>
+    Para asignar esta pol&iacute;tica a un grupo podemos ejecutar el siguiente
+    comando:
+</p>
+
+<pre>
+    $aws iam put-group-policy --group-name webapp --policy-document file://ses-policy.json --policy-name ses-webapp
+</pre>
+
+<h2> AWS-cli y SES </h2>
+
+<p>
+    Podemos usar la consola para acceder a los servicios SES, para ver
+    una lista de comandos disponibles podemos usar el comando
+    <code> aws ses help </code>. Lo primero que podemos hacer
+    es listar las identidades asociadas a una cuenta con el comando
+     <code>  aws ses list-identities     </code>:
+</p> 
+
+<pre>
+    $aws ses list-identities
+
+    {
+        "Identities": [
+            "email@mydomail.com"
+        ]
+    }
+
+</pre>
+
+<h2> Enviando mensajes </h2>
+
+<pre>
+aws ses send-email --from email@mydomail.com --to user@box.com --subject 'test message' --text 'hello world'  --html '<h1>hello world</h1>'
+</pre>
+
+<h2> References </h2>
+
+<ul>
+    <li>
+       <a href="https://aws.amazon.com/ses/"> Amazon SES </a>
+      <a href="http://docs.aws.amazon.com/ses/latest/DeveloperGuide/quick-start.html"> Amazon SES Quick Start </a>
+      <a href="http://docs.aws.amazon.com/ses/latest/DeveloperGuide/verify-email-addresses.html">  Verifying Email Addresses in Amazon SES </a>
+    </li>
+</ul>
