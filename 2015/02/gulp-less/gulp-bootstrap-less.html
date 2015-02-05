@@ -1,0 +1,153 @@
+<p>
+  <a href="http://gulpjs.com/"> Gulp  </a> is a Javascript library useful to automatize workflows, in this
+  post We will see how to use it to compile bootstrap  <a href="http://lesscss.org/"> less files.</a>
+</p>
+
+
+<h2> Project Structure </h2>
+
+<p>
+    Inside test folder we have an index.html file that imports bootstrap css from public/css/bootstrap.css,  bootstrap-3.3.2/less contains
+    less files that we have to compile in order to generate css file: 
+</p>
+
+<pre>
+    test/
+    ├── bootstrap-3.3.2
+    │   ├── dist
+    │   ├── fonts
+    │   ├── js
+    │   ├── less
+    │   │   ├── bootstrap.less
+    │   │   ├── mixins.less
+    └── index.html
+    └── gulpfile.js
+    └── public
+        └── css
+
+</pre>
+
+<h2> Our Goal </h2>
+
+<p>
+    What We want to do is to load  <code> test/bootstrap-3.3.2/less/bootstrap.less </code> and generate <code> public/css/bootstrap.css </code>. We want
+    to do it automatically, so every time that We modify some .less file inside <code> test/bootstrap-3.3.2/less/ </code>  css file will be regenerated.
+</p>
+
+<h2>  Libraries Installation </h2>
+
+<pre>
+    npm install less
+    npm install gulp
+    npm install gulp-less
+    npm install gulp-sourcemaps
+    npm install  gulp-watch
+</pre>
+
+<h2> Gulp file </h2>
+
+<p>
+    Inside test folder, We will create a file named gulpfile.js:
+</p>
+
+<pre>
+    var gulp = require('gulp');
+
+    gulp.task('default', function() {
+      // place code for your default task here
+    });
+</pre>
+
+<h3> Compiling less </h3>
+
+<pre>
+    var gulp = require('gulp'),
+        less = require('gulp-less'),
+        path = require('path'),
+        sourcemaps = require('gulp-sourcemaps'),
+        less_paths = {};
+
+    // paths where less files are allocated
+
+    less_paths = [
+            __dirname + '/bootstrap-3.3.2/less/bootstrap.less'
+        ]
+
+    gulp.task('default', ['less:static']);
+
+
+    gulp.task('less:static', function () {
+        return gulp.src(less_paths)
+            .pipe(sourcemaps.init())
+            .pipe(less())
+            .pipe(sourcemaps.write('./'))
+            .pipe(gulp.dest(__dirname + '/public/css'));
+
+    });
+</pre>
+
+<p>
+    Now You can compile less and generate static css executing command <code> gulp</code> inside test directory. Gulp will search gulpfile.js and 
+    it will execute tasks defined as default.
+</p>
+
+<h3> Detecting changes and re compiling automatically </h3>
+<p>
+    We can create another task that will <strong>watch</strong> for changes on the less files, so if You change any less file, gulp will regenerate css 
+    automatically. To do that We will add another funciton to  gulpfile.js 
+</p>
+
+
+<pre>
+    gulp.task('check', function() {
+        gulp.watch(watch_paths, ['less:static']);
+    });
+</pre>
+
+<p>
+    index.html structure is pretty simple, just importing bootstrap
+    css and js files:
+</p>
+
+<pre>
+
+<html>
+    <head>
+        <link rel="stylesheet/less" type="text/css" href="./public/css/bootstrap.css" />
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+    </head>
+
+    <body>
+
+        <div class="row">
+            <div class="btn-group" role="group" aria-label="...">
+              <button type="button" class="btn btn-default">Left</button>
+              <button type="button" class="btn btn-default">Middle</button>
+              <button type="button" class="btn btn-default">Right</button>
+            </div>
+            <div class="col-xs-6 col-sm-3">.col-xs-6 .col-sm-3</div>
+            <div class="col-xs-6 col-sm-3">.col-xs-6 .col-sm-3</div>
+
+            <!-- Add the extra clearfix for only the required viewport -->
+            <div class="clearfix visible-xs-block"></div>
+
+            <div class="col-xs-6 col-sm-3">.col-xs-6 .col-sm-3</div>
+           <div class="col-xs-6 col-sm-3">.col-xs-6 .col-sm-3</div>
+        </div>
+    </body>
+</html>
+</pre>
+
+
+<p>
+   <code> gulpfile.js </code> can be fount at this <a href=""> link </a>
+</p>
+
+<h2> References </h2>
+
+<li>
+    <a href="https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md"> Gulp's documentation </a>
+    <a href="http://lesscss.org/">Less Framework </a>
+    <a href="https://github.com/plus3network/gulp-less"> Gulp less</a>
+    <a href="http://www.smashingmagazine.com/2014/06/11/building-with-gulp/"> Building with gulp </a>
+</li>
