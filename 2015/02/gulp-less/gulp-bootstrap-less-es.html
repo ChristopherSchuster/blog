@@ -1,14 +1,14 @@
 <p>
-  <a href="http://gulpjs.com/"> Gulp  </a> is a nodejs library useful to automatize workflows, in this
-  post We will see how to use it to compile bootstrap  <a href="http://lesscss.org/"> less files.</a>
+  <a href="http://gulpjs.com/"> Gulp  </a> es una librer&iacute;a nodejs para generar flujos de trabajo, en este 
+  post veremos como compilar  <a href="http://lesscss.org/"> archivos less </a> para bootstrap.
 </p>
 
 
-<h2> Project Structure </h2>
+<h2> Estructura del proyecto </h2>
 
 <p>
-    Inside test folder we have an index.html file that imports bootstrap css from public/css/bootstrap.css.  bootstrap-3.3.2/less directory contains
-    less files that we have to compile in order to generate css file: 
+    Dentro del directorio test tenemos un idex.html el cual usa el css de boostrap generado en public/css/bootstrap.css. 
+    El directorio  bootstrap-3.3.2/less contiene los archivos less que deben ser compilados para generar el archivo css.
 </p>
 
 <pre>
@@ -27,14 +27,15 @@
 
 </pre>
 
-<h2> Our Goal </h2>
+<h2> Nuestro Objetivo </h2>
 
 <p>
-    What We want to do is to load  <code> test/bootstrap-3.3.2/less/bootstrap.less </code> and generate <code> public/css/bootstrap.css </code>. We want
-    to do it automatically, so every time that We modify some .less file inside <code> test/bootstrap-3.3.2/less/ </code>  css file will be regenerated.
+    Queremos leer el archivo <code> test/bootstrap-3.3.2/less/bootstrap.less </code> y generar <code> public/css/bootstrap.css </code>. Queremos hacerlo
+    de forma automatica, de forma que cada vez que modifiquemos un archivo dentro del directorio <code> test/bootstrap-3.3.2/less/ </code> 
+    el archivo  css sea regenerado.
 </p>
 
-<h2>  Libraries Installation </h2>
+<h2>  Instalaci&oacute;n de las librer&iacute;as </h2>
 
 <pre>
     npm install less
@@ -44,10 +45,10 @@
     npm install  gulp-watch
 </pre>
 
-<h2> Gulp file </h2>
+<h2> Archivo Gulp </h2>
 
 <p>
-    Inside test folder, We will create a file named gulpfile.js:
+    Dentro del directorio test creamos un archivo llamado gulpfile.js:
 </p>
 
 <pre>
@@ -58,7 +59,7 @@
     });
 </pre>
 
-<h3> Compiling less </h3>
+<h3> Compilando less </h3>
 
 <pre>
     var gulp = require('gulp'),
@@ -87,14 +88,13 @@
 </pre>
 
 <p>
-    Now You can compile less and generate static css executing command <code> gulp</code> inside test directory. Gulp will search gulpfile.js and 
-    it will execute tasks defined as default.
+    Ahora podemos compilar y generar el archivo css ejecutando el comando <code> gulp</code> dentro del directorio test. 
+    Gulp buscar&aacute; el archivo gulpfile.js  y ejecutar&aacute; las tareas definidas como default.
 </p>
 
-<h3> Detecting changes and re compiling automatically </h3>
+<h3> Detectando cambios y recompilando de forma autom&aacute;tica</h3>
 <p>
-    We can create another task that will <strong>watch</strong> for changes on the less files, so if You change any less file, gulp will regenerate css 
-    automatically. To do that We will add another funciton to  gulpfile.js 
+    Podemos crear una tarea que  <strong>observe</strong>  cambios en los archivos less y regenere el css: 
 </p>
 
 
@@ -105,8 +105,7 @@
 </pre>
 
 <p>
-    index.html structure is pretty simple, just importing bootstrap
-    css and js files:
+    index.html es muy simple, solo importar archivos js y css de  bootstrap:
 </p>
 
 <pre>
@@ -140,8 +139,8 @@
 
 
 <p>
-   <code> gulpfile.js </code> can be found at this <a href="https://github.com/maigfrga/blog/blob/master/2015/02/gulp-less/gulpfile.js"> link. </a>
-    Many tanks to my friend <a href="https://www.linkedin.com/in/raulmr"> Ra&uacute;l </a> who helped me with this post.
+  El archivo <code> gulpfile.js </code> puede ser encontrado en este <a href="https://github.com/maigfrga/blog/blob/master/2015/02/gulp-less/gulpfile.js"> enlace. </a>
+Muchas gracias a mi amigo <a href="https://www.linkedin.com/in/raulmr"> Ra&uacute;l </a> por ayudarme con este post.
 </p>
 
 <h2> References </h2>
