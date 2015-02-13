@@ -1,0 +1,140 @@
+<p>
+Scala es un lenguage de programaci&oacute;n objecto-funcional, los programas
+escritos en este lenguaje se ejecutan en la m&aacute;quina virtual de Java lo
+que hace posible desarrollar programas h&iacute;bridos usando componentes de
+Java y Scala, este post es una breve introducci&oacute;n.
+</p>
+
+
+<h2> Instalaci&oacute;n </h2>
+
+<pre>
+    sudo apt-get install scala
+</pre>
+
+<h2> Hola mundo </h2>
+
+<p>
+    Crearemos una archivo llamado HelloWorld.scala con el siguiente
+    c&oacute;digo:
+</p>
+
+<pre>
+    object HelloWorld {
+      def main(args: Array[String]) {
+        println("Hello, world!")
+      }
+    }
+</pre>
+
+<p>
+Podemos compilar el programa con el comando <code>scalac HelloWorld.scala  </code> , este comando generar&aacute; una clase llamada HelloWorld.class, podemos 
+ejecutar el programa con el comando <code> scala HelloWorld </code>
+</p>
+
+
+<h2> Simple Servidor TCP echo usando java.net.*</h2>
+
+<p>
+    El c&oacute;digo a continuaci&oacute;n implmenta un servidor tcp en java:
+</p>
+
+<pre>
+
+    import java.lang.*;
+    import java.io.*;
+    import java.net.*;
+
+    class Server {
+        public static void main(String args[]) {
+            try {
+                int serverPort = 4020;
+                ServerSocket serverSocket = new ServerSocket(serverPort);
+                serverSocket.setSoTimeout(10000);
+
+                while(true) {
+                    System.out.println("Waiting for client on port " + serverSocket.getLocalPort() + "...");
+
+                    Socket server = serverSocket.accept();
+                    System.out.println("Just connected to " + server.getRemoteSocketAddress());
+
+                    PrintWriter toClient =
+                        new PrintWriter(server.getOutputStream(),true);
+                    BufferedReader fromClient =
+                        new BufferedReader(
+                                new InputStreamReader(server.getInputStream()));
+                    String line = fromClient.readLine();
+                    System.out.println("Server received: " + line);
+                    toClient.println(line);
+                    server.close();
+                }
+
+            } catch(Exception e) {
+                System.out.print(e.getMessage());
+            }
+        }
+    }
+</pre>
+
+<p>
+    Podemos escribir este mismo programa en scala usando el paquete  
+    java.net.* de java:
+
+</p>
+
+<pre>
+
+import java.net.{ ServerSocket, SocketException, SocketTimeoutException, Socket }
+import java.io.{ PrintWriter, BufferedReader, InputStreamReader, OutputStreamWriter }
+
+object EchoServer {
+  var port = 1320
+
+  def run() {
+    val serverSocket = new ServerSocket(port)
+
+    def process( socket: Socket) {
+      val bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream))
+      var line = ""
+      var msg = ""
+        do {
+          line = bufferedReader.readLine()
+          msg += line + "\n"
+        } while (line != "")
+
+      val out: PrintWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream))
+      out.println(msg)
+      out.flush()
+    }
+
+    def loop() {
+      while (true) {
+        val socket = serverSocket.accept()
+        process(socket)
+        socket.close()
+      }
+    }
+    loop()
+  }
+
+  def main(args: Array[String]) {
+
+    if(args.length > 0) {
+      val arglist = args.toList
+      port = arglist(0).toInt
+    }
+    run()
+  }
+
+}
+</pre>
+
+<h2> Referencias</h2>
+
+<ul>
+
+    <li href="https://en.wikipedia.org/wiki/Scala_(programming_language)"> Wikipedia </li>
+    <li href="http://www.scala-lang.org/"> Sitio oficial Scala </li>
+    <li href="http://www.bogotobogo.com/Java/tutorial/tcp_socket_server_client.php">Servidor TCP en Java </li>
+
+</ul>
