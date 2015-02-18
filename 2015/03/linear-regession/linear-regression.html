@@ -1,0 +1,271 @@
+<p>
+ <a href="https://en.wikipedia.org/wiki/Linear_regression"> 
+ Linear regression </a> is a statistic method useful to make predictions, 
+ in this post we will generate a linear regression over
+ <a href="http://estrategiaticolombia.co/estadisticas/opendata/"> public data from Colombian Goverment about Internet growth. </a>
+
+</p>
+
+<h2> Tools to use </h2>
+
+<ul>
+    <li>
+       <a href=" https://www.python.org/"> Python </a>: We will use it to 
+       format data. 
+    </li>
+    <li>
+       <a href="https://www.gnu.org/software/octave/"> Octave </a>: We will use it to generate regression data. 
+    </li>
+</ul>
+
+
+<h2> Formating  the data </h2>
+<p>
+    Data from Colombian Goverment contains several variables about different topics, We need to process this data and generate a simple cvs file where first 
+    column Will be months since first measure (Oct 2011) and the second value
+    will be the number of internet affiliates by period. The first step is
+    to get raw data:
+</p>
+
+<pre>
+    http://estrategiaticolombia.co/estadisticas/opendata/dat_dedicado_general.json
+</pre>
+
+<p>
+    Now We can use a simple python script to format the data to feed octave:
+</p>
+
+<pre>
+
+from decimal import *
+
+
+import json
+import csv
+
+def total_by_period(jf):
+    """
+    Process dedicated internet statistics in Colombia from json file downloaded from
+    http://estrategiaticolombia.co/estadisticas/opendata/dat_dedicado_general.json
+    And generate total  by period
+    """
+    i = 0
+    data_dict = {}
+
+    def proccess_record(line):
+        """
+        Process every line inside file in order to get a consolidate
+        """
+        j_line = json.loads(line)[0]
+        period_key = '{}-{}'.format(j_line['ANHO'], j_line['PERIODO'])
+        j_line['SUSCRIPTORES'] = Decimal(j_line['SUSCRIPTORES'])
+        if period_key not in data_dict:
+            record = {
+                    'total': j_line['SUSCRIPTORES']
+            }
+            data_dict[period_key]  = record
+
+        else:
+            val = j_line['SUSCRIPTORES']
+            data_dict[period_key]['total'] += val
+
+    with open(jf, 'r') as f:
+        for line in f:
+            i +=1
+
+            try:
+                proccess_record(line)
+            except Exception as e:
+                print e
+                print 'error processing line {}'.format(i)
+
+            if i > 10000:
+                f.close()
+                break
+
+    # We must construct an array in format (x, y) where by every period y we have
+    # total by period y indexes must be numbers so we get the y axis and
+    # create a list of indexes, every item in this list represent a period
+    # one period represents 3 months
+    period_list = []
+    keys = data_dict.keys()
+    keys.sort()
+    period_index = 0
+    with open('total_by_period.csv', 'w') as csvfile:
+        spamwriter = csv.writer(csvfile, delimiter=',')
+        #every period represents 3 monts
+        for n_index in range(len(keys)):
+            val = data_dict[keys[n_index]]
+            row = (period_index, str(val['total']))
+            spamwriter.writerow(row)
+            period_index += 3
+
+
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--task', default='total_by_period')
+    parser.add_argument('--file', default='./dat_dedicado_general.json')
+    args = parser.parse_args()
+
+    task_dict = {
+        'total_by_period': total_by_period,
+    }
+
+    task_dict[args.task](args.file)
+
+if __name__ == "__main__":
+    main()
+</pre>
+
+
+<h2> Generating Regression </h2>
+
+<p>
+    We can now use octave to generate linear regression, first step is to 
+    load the data and create 2 vectos, one with x variables and another with
+    y variables:
+</p>
+
+<pre>
+    % Load csv file
+    data = load('total_by_period.csv');
+
+    % Define x and y
+    x = data(:,1);
+    y = data(:,2);
+</pre>
+
+
+<p>
+    Next step is to create plot function and call it:
+</p>
+
+<pre>
+    % Create a function to plot the data
+    function plotData(x,y)
+    plot(x,y,'rx','MarkerSize',8); % Plot the data
+    end
+
+    % Plot the data
+
+    plotData(x,y);
+
+    ylabel('Internet adoption in Colombia');
+    xlabel('Months since october 2011');
+
+    fprintf('Program paused. Press enter to continue.\n');
+
+    pause;
+</pre>
+
+<p>
+    This funciton will generate the image below:
+</p>
+
+<img src="https://raw.githubusercontent.com/maigfrga/blog/master/2015/03/linear-regession/internetadptioncolombia.png" />
+
+<p>
+    Next step is to calculate regression:
+</p>
+
+<pre>
+    % Count how many data points we have
+    m = length(x); % Add a column of all ones (intercept term) to x
+    X = [ones(m, 1) x];
+
+    % Calculate theta
+
+    theta = (pinv(X'*X))*X'*y
+</pre>
+
+<p>
+    For our sample data theta values are [2.1368e+05, 2.3589e+03]    this is
+    our linear regression, Now we can plot it:
+</p>
+
+<pre>
+    hold on; % this keeps our previous plot of the training data visible 
+    plot(X(:,2), X*theta, '-');
+    legend('Training data', 'Linear regression');
+    hold off % Do not put any more plots on this figure
+    pause;
+</pre>
+
+
+<p>
+    The result image below:
+</p>
+
+<img src="     https://raw.githubusercontent.com/maigfrga/blog/master/2015/03/linear-regession/linear.png  ">
+
+
+
+<h2> Tabulating some data </h2>
+
+<p>
+We can apply formula <code> y = theta[x] + theta[y] </code>
+to get some data:
+
+</p>
+
+<pre>
+    internet growth = theta[x] * month  + theta[y]
+    internet growth = 2.1368e+05 * month + 2.3589e+03
+</pre>
+
+<table class="table">
+      <thead>
+        <tr>
+          <th>Months since October 2011</th>
+          <th>Number of users</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>48 (oct 2015)</td>
+          <td> 10258998.9 </td>
+        </tr>
+        <tr>
+          <td>57 (Jun 2016) </td>
+          <td>12182118.9 </td>
+        </tr>
+        <tr>
+          <td>72 (oct 2017)</td>
+          <td>15387318.9 </td>
+        </tr>
+      </tbody>
+</table>
+
+
+
+<h2> References </h2>
+<ul>
+    <li>
+        <a href="https://en.wikipedia.org/wiki/Linear_regression">
+            Wikipedia
+        </a>
+    </li>
+    <li>
+        <a href="http://www.lauradhamilton.com/tutorial-linear-algebra-with-octave">
+        Linear Algebra basis with octave
+        </a>
+    </li>
+    <li>
+        <a href="http://www.lauradhamilton.com/tutorial-linear-regression-with-octave">
+        An Introduction to Linear Regression Analysis
+        </a>
+    </li>
+    <li>
+        <a href="https://gnu.org/software/octave/">
+            Octave
+        </a>
+    </li>
+    <li>
+        <a href="http://estrategiaticolombia.co/estadisticas/opendata/">
+            Open Data Colombia
+        </a>
+    </li>
+
+</ul>
