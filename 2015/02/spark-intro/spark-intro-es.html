@@ -1,0 +1,187 @@
+<p>
+  Apache Spark es un framework de c&oacute;digo abierto para computaci&oacute;n
+  distribuida. Ha sido dise&ntilde;ado para ejecutar procesamiento de grandes
+  colleciones de informaci&oacute;n (big data) con excelente desempe&ntilde;o 
+  lo cual lo hace ideal para algoritmos de aprendizaje de m&aacute;quina.
+  En este post cubriremos aspectos b&aacute;sicos tales como sus componentes,
+  instalci&oacute;n y consola de python.
+</p>
+
+<h2> Componentes de Spark  </h2>
+
+<h3> Spark Core y Resilient Distributed Datasets </h3>
+
+<p>
+Spark Core  contiene la funcionalidad  base del proyecto, provee computaci&oacute;n distribuida y operacioens I/O. 
+Spark Core es el lugar done reside al  API Resilient Distributed Datasets (RDD).
+ Esta API escode la complejidad inherente a sistemas distribuidos y expone su
+ funcionalidad a trav&eacute;s de clientes en Java, Python, Scala. Desde el
+ punto de vista de una aplicaci&oacute;n los datos procesados no estan 
+ distribuidos en varios nodos, la informaci&oacute;n aparentemente se encuentra
+ en un mismo lugar f&iacute;sico .
+</p>
+
+<h3> Spark SQL </h3>
+<p>
+  Provee un lenguaje de consulta estructurado que se puede integrar con
+  SQL standar y mezclar con el API RDD para definir procesos complejos de
+  extracci&oacute;n de datos.
+</p>
+
+<h3> Spark Streaming </h3>
+<p>
+    Este componente ingiere flujos de datos y realiza transformaciones RDD.
+</p>
+
+<h3> MLlib Machine Learning Library</h3>
+
+<p>
+Este componente implementa los mas conocidos algoritmos de aprendizaje de m&acute;quina.
+</p>
+
+<h3> GraphX </h3>
+<p>
+ Este componente implementa  Computaci&oacute;n de grafos.
+</p>
+
+<h2> Instalaci&oacute;n </h2>>
+
+<p>
+    Es posible descargar y descomprimir spark desde  <a href="http://spark.apache.org/downloads.html"> su sitio web  </a> o es posible usar este
+   <a href="https://github.com/maigfrga/chef-spark"> este recipiente de chef </a>
+</p>
+
+<h2> Primeros pasos</h2>
+<p>
+    Podemos asumir que spark ha sido descargado y descomprimido en el directorio
+    /opt
+</p>
+
+<pre>
+    $cd /opt/spark-1.2.1-bin-hadoop2.4/
+    $ls
+    bin  conf  data  ec2  examples  lib  LICENSE  NOTICE  python  README.md  RELEASE  sbin  
+</pre>
+
+<h3> Interprete de  Python</h3>
+<p>
+    El comando <code bin/pyspark>   </code> inicia la consola modo python:
+</p>
+
+<pre>
+    $ bin/pyspark
+    Python 2.7.3 (default, Mar 13 2014, 11:03:55) 
+    [GCC 4.7.2] on linux2
+    Type "help", "copyright", "credits" or "license" for more information.
+    Spark assembly has been built with Hive, including Datanucleus jars on classpath
+    Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+    Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /__ / .__/\_,_/_/ /_/\_\   version 1.2.1
+      /_/
+
+    Using Python version 2.7.3 (default, Mar 13 2014 23:03:55)
+    SparkContext available as sc  
+</pre>
+
+<p>
+    Vamos a abrir el archivo /opt/spark-1.2.1-bin-hadoop2.4/README.md y ejecutar
+    algunas operaciones sencillas :
+</p>
+
+<pre>
+    >>> text = sc.textFile("README.md")
+    >>> print text
+    README.md MappedRDD[1] at textFile at NativeMethodAccessorImpl.java:-2
+    >>> text.count()
+    98
+    >>> text.first()
+    u'# Apache Spark'
+
+    >>> lines_with_spark = text.filter(lambda x: 'Spark' in x)
+    >>> lines_with_spark.count()
+    19
+
+    >>> text.filter(lambda x: 'Spark' in x).count()
+    19
+    
+</pre>
+
+<p>
+    Buscar el n&uacute; de palabras que tiene la l&iacute;nea m&acute;s larga:
+</p>
+
+
+<pre>
+    >>>text.map(lambda line: len(line.split())).reduce(lambda a, b: a if (a > b) else b)
+    14
+</pre>
+
+<p>
+    Encontrar la linea con el mayor n&uacute;mero de palabras impar:
+</p>
+
+<pre>
+    >>>text.map(lambda line: len(line.split())  if len(line.split()) % 2 != 0 else 0   ).reduce(lambda a, b: a if (a > b) else b)
+    13
+</pre>
+
+<p>
+    Ahora crearemos un archivo llamado process_file.py  con el siguiente c&oacute;digo:
+</p>
+
+<pre>
+
+    from operator import add
+    from pyspark import SparkContext
+
+    logFile = "/opt/spark-1.2.1-bin-hadoop2.4/README.md"  # Should be some file on your system
+    sc = SparkContext("local", "Simple App")
+    logData = sc.textFile(logFile).cache()
+
+# get set of list with odd number of words
+    odd_words_count = logData.filter(lambda line: len(line.split()) % 2 != 0).count()
+
+#get number of unique words
+    unique_words = logData.flatMap(lambda line: line.split(' ')).map(lambda x: (x, 1)).reduceByKey(add).collect()
+
+    print "there are %s lines with odd number of words\n" % odd_words_count
+    print "there are %s unique words\n" % len(unique_words)
+    print "and the unique words are :" 
+    for w in unique_words:
+        print "%s %s times" % w
+
+</pre>
+
+<p>
+    Podemos ejecutar el programa con el siguiente comando:
+</p>
+
+<pre>
+    $bin/spark-submit \
+    --master local[4] \
+    process_file.py
+</pre>
+
+
+<h2> Referencias </h2>
+
+<ul>
+
+    <li>
+        <a href="https://en.wikipedia.org/wiki/Apache_Spark">
+            Wikipedia
+        </a>
+    </li>
+    <li>
+        <a href="https://github.com/maigfrga/chef-spark"> Apache spark chef recipe </a>
+    </li>
+    <li>
+        <a href="http://spark.apache.org/docs/latest/quick-start.html"> Apache Spark Quick Start </a>
+    </li>
+    <li>
+        <a href="http://ksat.me/map-reduce-a-really-simple-introduction-kloudo/"> Map Reduce: A really simple introduction   </a>
+    </li>
+</ul>
