@@ -1,0 +1,143 @@
+<p>
+  <a href="http://datosabiertoscolombia.cloudapp.net/frm/Acerca/frmAcercaDe.aspx">  Cat&acute;logo de datos abiertos del estado Colombiano </a> 
+  es un sitio web que permite encontrar, de manera unificada, todos los datos publicados por las entidades públicas de Colombia, en formato abierto, con el fin de que éstos puedan ser usados por cualquier persona para desarrollar 
+  cualquier tipo de actividad comercial o no comercial. Este post muestra como
+  descargar el cat&acute;logo en su totalidad en un disco duro local usando
+  python.
+</p>
+
+<h2> Obteniendo la lista de contenedores </h2>
+
+<p>
+ Un contenedor es una depedencia del gobierno responsable de uno m&aacute;s 
+ cat&aacute;logos de datos, podemos obtener el listado de contenedores
+ usando el comando curl:
+</p>
+
+<pre>
+    curl http://servicedatosabiertoscolombia.cloudapp.net/v1/
+</pre>
+
+<p>
+   El resultado esta en formato AtomPub, por lo tanto es m&aacute;s sencillo
+   usar python para obtener el listado y procesarlo:
+</p>
+
+<pre>
+    def get_container_list():
+        """
+        Get container list from open data Colombia
+        """
+        h = httplib2.Http()
+        (resp_headers, content) = (
+            h.request("http://servicedatosabiertoscolombia.cloudapp.net/v1/",
+            "GET"))
+        root = ET.fromstring(content)
+        return [ child.get('href') for child in root[0]]
+</pre>
+
+
+<h2> Obteniendo la lista de cat&aacute;logos </h2>
+<p>
+    Ahora podemos consultar la lista de cat&aacute;logos por contenedor con
+    una petici&oacute;n GET a la url
+    http://servicedatosabiertoscolombia.cloudapp.net/v1/<contenedor>
+</p>
+
+<pre>
+ curl http://servicedatosabiertoscolombia.cloudapp.net/v1/Ministerio_deacion_y_las_comunicaciones
+</pre>
+
+<p>
+    Podemos usar python para iterar sobre todos los contenedores y 
+    obtener el listado de cat&aacute;logos:
+</p>
+
+
+<pre>
+    def get_catalog_list(container_list):
+        """
+        Get Catalog list
+        """
+        h = httplib2.Http()
+        url = "http://servicedatosabiertoscolombia.cloudapp.net/v1/"
+        catalogs_by_entity = {}
+
+        for container in container_list:
+            catalog_list = []
+            if container is not None:
+                (resp_headers, content) = h.request(url + container, "GET")
+                try:
+                    root = ET.fromstring(content)
+                    for child in root[0]:
+                        if 'href' in child.attrib:
+                            catalog_list.append(child.attrib['href'])
+                except Exception as e:
+                    print e
+                    print '\n'
+                    print container
+                catalogs_by_entity[container] = catalog_list
+        return catalogs_by_entity
+</pre>
+
+
+
+<h2> Obteniendo los datos </h2>
+
+<p>
+Podemos hacer una petici&oacute;n GET con el formato
+http://servicedatosabiertoscolombia.cloudapp.net/v1/contenedor/set?$format=json
+para obtener los datos:
+</p>
+
+<pre>
+curl http://servicedatosabiertoscolombia.cloudapp.net/v1/Ministerio_de_tecnologias_de_informacion_municaciones/dataset4
+</pre>
+
+
+<p>
+    Podemos usar python para obtener todos los cat&aacute;logos y 
+    almacenarlos en nuestro disco duro:
+</p>
+
+<code>
+    def get_catalogs(catalogs_by_entity, directory='./'):
+        """
+        Get catalog data and save it in disk
+        """
+        h = httplib2.Http()
+        root_path = os.path.join(directory, 'opendata')
+        # remove directory if exist
+        if os.path.exists(root_path):
+            shutil.rmtree(root_path)
+        os.mkdir(root_path)
+        url = "http://servicedatosabiertoscolombia.cloudapp.net/v1/"
+        for k, v in catalogs_by_entity.items():
+            dir_path = os.path.join(root_path, k)
+            os.makedirs(dir_path)
+            for cat in v:
+                (resp_headers, content) = h.request(
+                    url + k + '/' + cat + '?$format=json', "GET")
+                fname = cat + '.json'
+                f = open (os.path.join(dir_path, fname), 'w')
+                f.write(content)
+                f.close()
+</code>
+
+<p>
+  El c&oacute;digo fuente puede ser descargado en este  
+  <a href=""> enlace </a>
+</p>
+
+<h2>Referencias</h2>
+
+<ul>
+    <li>
+       <a href="http://datosabiertoscolombia.cloudapp.net/frm/Acerca/frmAcercaDe.aspx">  Cat&acute;logo de datos abiertos del estado Colombiano </a>
+    </li>
+    <li>
+<a href="https://en.wikipedia.org/wiki/Atom_(standard)" > Formato Atom </a>
+      
+    </li>
+
+</ul>

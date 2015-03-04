@@ -1,0 +1,27 @@
+<feed xml:base='http://37.46.83.126/v1/DADEP/' xmlns:d='http://schemas.microsoft.com/ado/2007/08/dataservices' xmlns:m='http://schemas.microsoft.com/ado/2007/08/dataservices/metadata' xmlns='http://www.w3.org/2005/Atom'>
+              <title type='text'>indicadoresdeespaciopublicoverde</title>
+              <id>http://37.46.83.126/v1/DADEP/indicadoresdeespaciopublicoverde</id>
+              <updated>2015-03-04T12:41:35Z</updated>
+              <link rel='self' title='indicadoresdeespaciopublicoverde' href='indicadoresdeespaciopublicoverde'/> 
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>04357a26-f4ba-4b6a-9284-1b97c15ea94b</d:PartitionKey>
+    <d:RowKey>300c68a3-2fb1-4d11-b09a-f64c36a9357e</d:RowKey>
+    <d:tipo_de_espacio>ESTRUCTURA ECOLOGICA</d:tipo_de_espacio>
+    <d:espacio_en_m2>18156068.29</d:espacio_en_m2>
+    <d:numero_habitantes>7559071.00</d:numero_habitantes>
+  </m:properties></content></entry>
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>f7ab4ac7-bea4-4810-812f-3d3c4f3d9916</d:PartitionKey>
+    <d:RowKey>0139f15c-7015-463c-a1ff-f92834d7745f</d:RowKey>
+    <d:tipo_de_espacio>ZONAS VERDES</d:tipo_de_espacio>
+    <d:espacio_en_m2>14589004.57</d:espacio_en_m2>
+    <d:numero_habitantes>7559071.00</d:numero_habitantes>
+  </m:properties></content></entry>
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>071f3691-19b2-4564-ac52-2d3a78b43407</d:PartitionKey>
+    <d:RowKey>7984fe41-59a4-4649-ab7f-e827624c9a31</d:RowKey>
+    <d:tipo_de_espacio>PARQUES</d:tipo_de_espacio>
+    <d:espacio_en_m2>14905791.67</d:espacio_en_m2>
+    <d:numero_habitantes>7559071.00</d:numero_habitantes>
+  </m:properties></content></entry>
+ </feed>

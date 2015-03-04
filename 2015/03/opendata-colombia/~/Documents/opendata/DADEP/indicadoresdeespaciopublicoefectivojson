@@ -1,0 +1,34 @@
+<feed xml:base='http://37.46.83.126/v1/DADEP/' xmlns:d='http://schemas.microsoft.com/ado/2007/08/dataservices' xmlns:m='http://schemas.microsoft.com/ado/2007/08/dataservices/metadata' xmlns='http://www.w3.org/2005/Atom'>
+              <title type='text'>indicadoresdeespaciopublicoefectivo</title>
+              <id>http://37.46.83.126/v1/DADEP/indicadoresdeespaciopublicoefectivo</id>
+              <updated>2015-03-04T12:41:35Z</updated>
+              <link rel='self' title='indicadoresdeespaciopublicoefectivo' href='indicadoresdeespaciopublicoefectivo'/> 
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>107f7ddb-7dfa-4020-88a4-8012bde98313</d:PartitionKey>
+    <d:RowKey>63f0528a-ffbe-4e97-88db-cd6cef666940</d:RowKey>
+    <d:espacio_publico_efectivo>ZONAS VERDES</d:espacio_publico_efectivo>
+    <d:espacio_en_m2>14589004.57</d:espacio_en_m2>
+    <d:numero_de_habitantes>7559071.00</d:numero_de_habitantes>
+  </m:properties></content></entry>
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>6076031c-d109-443d-9b4f-9b4af28e5815</d:PartitionKey>
+    <d:RowKey>9f529064-5eb6-4558-b52f-456015b37cbe</d:RowKey>
+    <d:espacio_publico_efectivo>PARQUES</d:espacio_publico_efectivo>
+    <d:espacio_en_m2>14905791.67</d:espacio_en_m2>
+    <d:numero_de_habitantes>7559071.00</d:numero_de_habitantes>
+  </m:properties></content></entry>
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>cc34e228-10bf-4507-94bd-2b340d58ecff</d:PartitionKey>
+    <d:RowKey>9510b715-032c-4c19-bbf4-9bb0bb1cc585</d:RowKey>
+    <d:espacio_publico_efectivo>PLAZAS</d:espacio_publico_efectivo>
+    <d:espacio_en_m2>125011.29</d:espacio_en_m2>
+    <d:numero_de_habitantes>7559071.00</d:numero_de_habitantes>
+  </m:properties></content></entry>
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>764e9769-27eb-474e-b51e-6874a4f95314</d:PartitionKey>
+    <d:RowKey>6b957621-d0f3-4c14-9c41-26c553d39c79</d:RowKey>
+    <d:espacio_publico_efectivo>PLAZOLETAS</d:espacio_publico_efectivo>
+    <d:espacio_en_m2>91570.65</d:espacio_en_m2>
+    <d:numero_de_habitantes>7559071.00</d:numero_de_habitantes>
+  </m:properties></content></entry>
+ </feed>

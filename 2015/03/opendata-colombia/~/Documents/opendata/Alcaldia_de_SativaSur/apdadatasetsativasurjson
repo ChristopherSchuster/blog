@@ -1,0 +1,105 @@
+<feed xml:base='http://37.46.83.126/v1/Alcaldia_de_SativaSur/' xmlns:d='http://schemas.microsoft.com/ado/2007/08/dataservices' xmlns:m='http://schemas.microsoft.com/ado/2007/08/dataservices/metadata' xmlns='http://www.w3.org/2005/Atom'>
+              <title type='text'>apdadatasetsativasur</title>
+              <id>http://37.46.83.126/v1/Alcaldia_de_SativaSur/apdadatasetsativasur</id>
+              <updated>2015-03-04T12:41:36Z</updated>
+              <link rel='self' title='apdadatasetsativasur' href='apdadatasetsativasur'/> 
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>654c3408-7419-4ea2-a241-443e965db846</d:PartitionKey>
+    <d:RowKey>64afe11d-dbbd-4ab4-8763-dc7f8dfb9052</d:RowKey>
+    <d:sector_de_cobertura>GENERAL</d:sector_de_cobertura>
+    <d:tipo_de_servicio>RESIDENCIAL</d:tipo_de_servicio>
+    <d:estrato_o_categoria>ESTRATO UNO</d:estrato_o_categoria>
+    <d:servicio_o_concepto>Acueducto (Cargo Consumo)</d:servicio_o_concepto>
+    <d:cantidad_de_suscriptores>145</d:cantidad_de_suscriptores>
+  </m:properties></content></entry>
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>71f8fc03-88fc-4ba3-9621-d43f12ab57f4</d:PartitionKey>
+    <d:RowKey>52cffa5a-46df-4f44-9f7e-c46b098c878d</d:RowKey>
+    <d:sector_de_cobertura>GENERAL</d:sector_de_cobertura>
+    <d:tipo_de_servicio>RESIDENCIAL</d:tipo_de_servicio>
+    <d:estrato_o_categoria>ESTRATO UNO</d:estrato_o_categoria>
+    <d:servicio_o_concepto>Alcantarillado</d:servicio_o_concepto>
+    <d:cantidad_de_suscriptores>105</d:cantidad_de_suscriptores>
+  </m:properties></content></entry>
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>96e86ca8-f3aa-41ce-af2e-4237fde98eff</d:PartitionKey>
+    <d:RowKey>a932bfd3-5705-4a04-9e8c-bd3798bd3ef3</d:RowKey>
+    <d:sector_de_cobertura>GENERAL</d:sector_de_cobertura>
+    <d:tipo_de_servicio>RESIDENCIAL</d:tipo_de_servicio>
+    <d:estrato_o_categoria>ESTRATO UNO</d:estrato_o_categoria>
+    <d:servicio_o_concepto>Aseo</d:servicio_o_concepto>
+    <d:cantidad_de_suscriptores>105</d:cantidad_de_suscriptores>
+  </m:properties></content></entry>
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>bfc5f6b4-68ed-409d-812c-58eeb9c09f5b</d:PartitionKey>
+    <d:RowKey>82044355-b72a-43af-85cb-4d3bdb111486</d:RowKey>
+    <d:sector_de_cobertura>BURA</d:sector_de_cobertura>
+    <d:tipo_de_servicio>RESIDENCIAL</d:tipo_de_servicio>
+    <d:estrato_o_categoria>ESTRATO UNO</d:estrato_o_categoria>
+    <d:servicio_o_concepto>Acueducto (Cargo Consumo)</d:servicio_o_concepto>
+    <d:cantidad_de_suscriptores>125</d:cantidad_de_suscriptores>
+  </m:properties></content></entry>
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>5ffd46f7-b500-4ae0-b3e3-e37bf762949a</d:PartitionKey>
+    <d:RowKey>54f41b6d-a2cc-431f-b4cb-2e7a1d9d1148</d:RowKey>
+    <d:sector_de_cobertura>TOBACHIA</d:sector_de_cobertura>
+    <d:tipo_de_servicio>RESIDENCIAL</d:tipo_de_servicio>
+    <d:estrato_o_categoria>ESTRATO UNO</d:estrato_o_categoria>
+    <d:servicio_o_concepto>Acueducto (Cargo Consumo)</d:servicio_o_concepto>
+    <d:cantidad_de_suscriptores>84CALDER</d:cantidad_de_suscriptores>
+  </m:properties></content></entry>
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>ac7d5c4e-f6c2-4d9c-b61d-db76127edfd6</d:PartitionKey>
+    <d:RowKey>326b7d7b-f0a4-41db-b5b0-cd3061a8756c</d:RowKey>
+    <d:sector_de_cobertura>TUNJOS</d:sector_de_cobertura>
+    <d:tipo_de_servicio>RESIDENCIAL</d:tipo_de_servicio>
+    <d:estrato_o_categoria>ESTRATO UNO</d:estrato_o_categoria>
+    <d:servicio_o_concepto>Acueducto (Cargo Consumo)</d:servicio_o_concepto>
+    <d:cantidad_de_suscriptores>105</d:cantidad_de_suscriptores>
+  </m:properties></content></entry>
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>2cf46a71-d64d-4281-9765-3de96c6d3113</d:PartitionKey>
+    <d:RowKey>4f956d29-4d73-4126-8012-b908bb3fe756</d:RowKey>
+    <d:sector_de_cobertura>BURA</d:sector_de_cobertura>
+    <d:tipo_de_servicio>RESIDENCIAL</d:tipo_de_servicio>
+    <d:estrato_o_categoria>ESTRATO DOS</d:estrato_o_categoria>
+    <d:servicio_o_concepto>Acueducto (Cargo Consumo)</d:servicio_o_concepto>
+    <d:cantidad_de_suscriptores>1CALDER</d:cantidad_de_suscriptores>
+  </m:properties></content></entry>
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>f2dc0643-1a77-4574-aa1b-a05d81967c90</d:PartitionKey>
+    <d:RowKey>ce5e3886-a575-4a1a-b80d-161171d4c975</d:RowKey>
+    <d:sector_de_cobertura>TUNJOS</d:sector_de_cobertura>
+    <d:tipo_de_servicio>RESIDENCIAL</d:tipo_de_servicio>
+    <d:estrato_o_categoria>ESTRATO DOS</d:estrato_o_categoria>
+    <d:servicio_o_concepto>Acueducto (Cargo Consumo)</d:servicio_o_concepto>
+    <d:cantidad_de_suscriptores>1</d:cantidad_de_suscriptores>
+  </m:properties></content></entry>
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>2631d1f6-c45f-43dd-b46e-7672af57ec23</d:PartitionKey>
+    <d:RowKey>155c0503-f259-41a3-b1b9-171a6bccf906</d:RowKey>
+    <d:sector_de_cobertura>GENERAL</d:sector_de_cobertura>
+    <d:tipo_de_servicio>OFICIAL</d:tipo_de_servicio>
+    <d:estrato_o_categoria>UNICA</d:estrato_o_categoria>
+    <d:servicio_o_concepto>Acueducto (Cargo Consumo)</d:servicio_o_concepto>
+    <d:cantidad_de_suscriptores>1</d:cantidad_de_suscriptores>
+  </m:properties></content></entry>
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>81afd7b8-1ce7-4252-8feb-03283b07897a</d:PartitionKey>
+    <d:RowKey>959af3d3-3478-436d-b425-945b29bfbca1</d:RowKey>
+    <d:sector_de_cobertura>GENERAL</d:sector_de_cobertura>
+    <d:tipo_de_servicio>OFICIAL</d:tipo_de_servicio>
+    <d:estrato_o_categoria>UNICA</d:estrato_o_categoria>
+    <d:servicio_o_concepto>Alcantarillado</d:servicio_o_concepto>
+    <d:cantidad_de_suscriptores>1</d:cantidad_de_suscriptores>
+  </m:properties></content></entry>
+  <entry><id></id><title type='text'/><updated></updated><author><name/></author><link rel='edit'/><category scheme='http://schemas.microsoft.com/ado/2007/08/dataservices/scheme'/><content type='application/xml'><m:properties>
+    <d:PartitionKey>2b59e7a5-7e5c-4379-aed2-5a7f3b61b950</d:PartitionKey>
+    <d:RowKey>c22e860c-543d-4b19-b669-c361172f30d3</d:RowKey>
+    <d:sector_de_cobertura>GENERAL</d:sector_de_cobertura>
+    <d:tipo_de_servicio>OFICIAL</d:tipo_de_servicio>
+    <d:estrato_o_categoria>UNICA</d:estrato_o_categoria>
+    <d:servicio_o_concepto>Aseo</d:servicio_o_concepto>
+    <d:cantidad_de_suscriptores>1</d:cantidad_de_suscriptores>
+  </m:properties></content></entry>
+ </feed>
