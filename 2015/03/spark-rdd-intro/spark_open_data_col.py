@@ -20,7 +20,6 @@ def extract_all_keys(structure):
     if not structure:
         return []
     key_set = []
-
     def traverse(k_set, st):
         for key, value in st.iteritems():
             k_set.append(key)
