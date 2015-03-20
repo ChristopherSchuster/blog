@@ -95,7 +95,7 @@ curl http://servicedatosabiertoscolombia.cloudapp.net/v1/Ministerio_de_tecnologi
     store on our hard drive:
 </p>
 
-<code>
+<pre>
     def get_catalogs(catalogs_by_entity, directory='./'):
         """
         Get catalog data and save it in disk
@@ -117,7 +117,7 @@ curl http://servicedatosabiertoscolombia.cloudapp.net/v1/Ministerio_de_tecnologi
                 f = open (os.path.join(dir_path, fname), 'w')
                 f.write(content)
                 f.close()
-</code>
+</pre>
 
 <p>
     Source code can be found at this

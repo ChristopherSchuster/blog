@@ -1,0 +1,81 @@
+<p>
+    Spark Resilient Distributed Dataset (RDD), are fault-tolerant collections of elements that can be operated on in parallel. This post is an introduction
+    about how to process data using RDD operations.
+
+</p>
+
+<h2> RDD basis </h2>
+<p>
+    RDD is a distributed immutable collection of objects that can be processed on multiple partitions on the cluster, for testings purposes
+    Whe can create a simple rdd on memory:
+</p>
+
+<pre>
+    sc = SparkContext("local", "Rdd intro")
+    data = [x for x in xrange(100)]
+    distData = sc.parallelize(data)
+</pre>
+
+
+<p>
+    We can manipulate distData in order to get a collection of prime numbers:
+</p>
+
+<pre>
+
+    def is_prime(n):
+        if n in (1, 2 ,3):
+            return True
+
+        if n == 4:
+            data = [2]
+        else:
+            data = [x for x in xrange(2, n/2)]
+
+        n = n * 1.0
+        for d in data:
+            if n % d == 0.0:
+                return False
+        return True
+
+    primeData = distData.filter(is_prime)
+</pre>
+
+
+<p>
+    RDD are recomputed every time that are accessed, if we want to reuse a RDD it is better persist it:
+</p>
+
+<p>
+
+def get_fibonacci(n):
+    return ((1+sqrt(5))**n-(1-sqrt(5))**n)/(2**n*sqrt(5))
+
+primeData.persist(StorageLevel.MEMORY_ONLY)
+fibonacciData = primeData.map(get_fibonacci)
+print fibonacciData.collect()
+</p>
+
+
+<h2> Using Spark RDD to analize data from open data colombia </h2>
+<p>
+<a href="http://www.maigfrga.ntweb.co/descargando-base-de-datos-open-data-colombia-usando-python/">  In a previous post</a> we learn 
+how to dowload Open Data Colombia database, now We can use spark to analize this data, we don't know what kind of infomation is
+inside this data, all We know is data is json encoded, so an starting point could be find out whic keys are in the datasets:
+</p>
+
+
+<h2> References </h2>
+
+<ul>
+    <li>
+        <a href="https://spark.apache.org/docs/latest/programming-guide.html#resilient-distributed-datasets-rdds"> Apache Spark Documentation</a>
+    </li>
+    <li>
+        <a href="http://www.maigfrga.ntweb.co/introduccion-apache-spark/"> Apache Spark Introduction </a>
+    </li>
+    <li>
+        <a href="http://www.maigfrga.ntweb.co/descargando-base-de-datos-open-data-colombia-usando-python/"> 
+            Downloading open data Colombia database using python   </a>
+    </li>
+</ul>

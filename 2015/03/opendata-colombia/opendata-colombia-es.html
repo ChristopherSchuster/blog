@@ -100,7 +100,7 @@ curl http://servicedatosabiertoscolombia.cloudapp.net/v1/Ministerio_de_tecnologi
     almacenarlos en nuestro disco duro:
 </p>
 
-<code>
+<pre>
     def get_catalogs(catalogs_by_entity, directory='./'):
         """
         Get catalog data and save it in disk
@@ -122,11 +122,11 @@ curl http://servicedatosabiertoscolombia.cloudapp.net/v1/Ministerio_de_tecnologi
                 f = open (os.path.join(dir_path, fname), 'w')
                 f.write(content)
                 f.close()
-</code>
+</pre>
 
 <p>
   El c&oacute;digo fuente puede ser descargado en este  
-  <a href=""> enlace </a>
+  <a href="https://github.com/maigfrga/blog/blob/master/2015/03/opendata-colombia/open_data_col.py"> enlace </a>
 </p>
 
 <h2>Referencias</h2>
