@@ -1,13 +1,14 @@
 <p>
-    Spark Resilient Distributed Dataset (RDD), are fault-tolerant collections of elements that can be operated on in parallel. This post is an introduction
-    about how to process data using RDD operations.
+    Spark Resilient Distributed Dataset (RDD) son colecciones de datos distribuidas y 
+    resistentens a fallos que pueden ser operadas en paralelo. Este post es una introducci&oacute;n
+    a las operaciones m&aacute;s b&aacute;sicas que podemos hacer con estas colecciones.
 
 </p>
 
-<h2> RDD basis </h2>
+<h2> Primeros pasos con RDD </h2>
 <p>
-    RDD is a distributed immutable collection of objects that can be processed on multiple partitions on the cluster, for testings purposes
-    Whe can create a simple rdd on memory:
+    Una colecci&oacute;n RDD es inmutable y generalmente se encuentra distribuida en m&uacute;ltiples 
+    particiones en un cluster, para propositos de prueba podemos crear una colecci&oacute;n RDD en memoria:
 </p>
 
 <pre>
@@ -18,7 +19,7 @@
 
 
 <p>
-    We can manipulate distData in order to get a collection of prime numbers:
+    Podemos maniuplar distData para obtener una colecci&oacute;n de n&uacute;meros primos:
 </p>
 
 <pre>
@@ -41,12 +42,12 @@
     primeData = distData.filter(is_prime)
 </pre>
 
-
 <p>
-    RDD are recomputed every time that are accessed, if we want to reuse a RDD it is better persist it:
+    RDD son computadas cada vez que son accedidas, si queremo usar la misma colecci&oacute;n m&aacute;s de 
+    una vez, podemos persistirla:
 </p>
 
-<p>
+<pre>
 
 def get_fibonacci(n):
     return ((1+sqrt(5))**n-(1-sqrt(5))**n)/(2**n*sqrt(5))
@@ -54,14 +55,15 @@ def get_fibonacci(n):
 primeData.persist(StorageLevel.MEMORY_ONLY)
 fibonacciData = primeData.map(get_fibonacci)
 print fibonacciData.collect()
-</p>
+</pre>
 
-
-<h2> Using Spark RDD to analize data from open data colombia </h2>
+<h2> Usando Spark RDD para analizar base de datos open data colombia </h2>
 <p>
-<a href="http://www.maigfrga.ntweb.co/descargando-base-de-datos-open-data-colombia-usando-python/">  In a previous post</a> we learn 
-how to dowload Open Data Colombia database, now We can use spark to analize this data, we don't know what kind of infomation is
-inside this data, all We know is data is json encoded, so an starting point could be find out  what keys are in the datasets:
+<a href="http://www.maigfrga.ntweb.co/descargando-base-de-datos-open-data-colombia-usando-python/"> En un post
+previo</a> aprendimos como desgargar la base de datos  we learn   Open Data Colombia, ahora podemos usar
+spark para analizar esta informaci&oacute;n.
+No sabemos que tipo de datos estan almacenados, solo sabemos que estan en formato json, por lo tanto un 
+punto de partida puede ser analizar las claves que aparecen en estos archivos:
 </p>
 
 <pre>
@@ -133,17 +135,17 @@ inside this data, all We know is data is json encoded, so an starting point coul
 </pre>
 
 
-<h2> References </h2>
+<h2> Referencias </h2>
 
 <ul>
     <li>
-        <a href="https://spark.apache.org/docs/latest/programming-guide.html#resilient-distributed-datasets-rdds"> Apache Spark Documentation</a>
+        <a href="https://spark.apache.org/docs/latest/programming-guide.html#resilient-distributed-datasets-rdds"> Documentaci&oacute;n Apache Spark </a>
     </li>
     <li>
-        <a href="http://www.maigfrga.ntweb.co/introduccion-apache-spark/"> Apache Spark Introduction </a>
+        <a href="http://www.maigfrga.ntweb.co/introduccion-apache-spark/"> Introduccci&oacute;n Apache Spark  </a>
     </li>
     <li>
         <a href="http://www.maigfrga.ntweb.co/descargando-base-de-datos-open-data-colombia-usando-python/"> 
-            Downloading open data Colombia database using python   </a>
+            Descargando base de datos open data Colombia usando python   </a>
     </li>
 </ul>

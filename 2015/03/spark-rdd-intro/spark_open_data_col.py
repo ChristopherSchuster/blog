@@ -35,31 +35,23 @@ def merge_keys(l1, l2):
     return l1 + l2
 
 def process_files(data_dir):
+    """
+    Step 1. Load json files from location directory.
+    Step 2. Aply mapping function to extract all keys by file
+    Step 3. Count how many times a key exists on all files
+    Step 4. Order dataset
+    """
     input = sc.textFile(data_dir)
     data = input.map(
         to_json).map(
             extract_all_keys).flatMap(
                 lambda x: [(k, 1) for k in x]).reduceByKey(
                     lambda x, y: x + y)
-    data.persist(StorageLevel.MEMORY_AND_DISK)
-    data.map(lambda x: json.dumps(x)).saveAsTextFile('./keys.json')
-    # data.map(
-    #     extract_all_keys).flatMap(
-    #         lambda x: [(k, 1) for k in x]).reduceByKey(
-    #             lambda x, y: x + y).map(
-    #                 lambda x: json.dumps(x)).saveAsTextFile('./keys.json')
-    #keys_rdd.persist(StorageLevel.MEMORY_AND_DISK)
-    #keys_rdd.map(lambda x: json.dumps(x)).saveAsTextFile('./keys.json')
-    #r = data.map(extract_all_keys).reduce(merge_keys)
-    #r = data.map(extract_all_keys).collect()
-    #map(lambda x: json.dumps(x)).saveAsTextFile('./keys.json')
-    #r = keys_rdd.collect()
 
-    #print 'there are %s keys, some of them can be duplicated \n' % len(r)
-    #print r[0]
-    #print type(r)
-    #result_keys_rdd = sc.parallelize(r)
-    #print result_keys_rdd.first()
+    print 'there are %s unique keys\n' % data.count()
+
+    d2 = data.map(lambda x: (x[1], x[0],)).sortByKey(False)
+    print d2.take(100)
     sc.stop()
 
 def main(data_dir):
