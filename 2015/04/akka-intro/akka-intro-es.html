@@ -1,0 +1,468 @@
+<div style="width:100%; float:left;">
+
+    <img style="width:30%; float:left;" class="img-thumbnail" src="https://upload.wikimedia.org/wikipedia/en/thumb/8/8e/Akka_logo_transparent.png/768px-Akka_logo_transparent.png" />
+
+    <p style="width:69%; float:left; padding:0 2px;" >
+
+        <a href="http://akka.io/" >Akka </a>  es un conjunto de librerias de c&oacute;digo abierto
+        cuyo principal objetivo es simplificar la construcci&oacute;n de sistemas concurrentes y 
+        distribuidos en la m&aacute;quina virtual de Java JVM.
+        En este post crearemos un servicio que recibir&aacute; l&iacute;neas separadas por comas, 
+        el sistema debe partir cada l&iacute;nea para extraer las palabras
+        y mantener un &iacute;ndice en disco duro contando cuantas veces una palabra ha sido enviada.
+    </p>
+
+</div>
+
+<h2> Creando el proyecto </h2>
+
+<p>
+Vamos a usar la herramienta <a href="http://www.scala-sbt.org/"> sbt  </a> para administrar nuestro proyecto,
+el primer paso es crear un directorio llamado <code> word-service </code> y dentro de el 
+un archivo llamado <code> build.sbt </code> con las siguientes l&iacute;neas:
+
+</p>
+
+<pre>
+    name := "Word service"
+
+    version := "1.0"
+
+    scalaVersion := "2.11.6"
+
+    resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
+
+
+    libraryDependencies += "com.typesafe.akka" % "akka-actor_2.11" % "2.3.4"
+</pre>
+
+<p>
+Luego de crear el archivo  <code> build.sbt </code> ,  crearemos el el directorio
+ <code> src/main/scala </code> donde almacenaremos el c&oacute;digo fuente de Scala.
+ Dentro de este directorio crearemos el archivo <code>WordCount.scala</code> y agregaremos
+ algunos import:
+</p>
+
+<pre>
+    import akka.actor._
+    import akka.routing.RoundRobinRouter
+    import akka.util.Duration
+    import akka.util.duration._
+
+</pre>
+
+<h3> Creando los mensajes </h3>
+
+<p>
+    El dise&ntilde;o propuesto consite en un actor Master responsable de iniciar el computo creando
+    un grupo de actores Workers. A continuaci&oacute;n el actor Master divide el trabajo en partes iguales
+    que ser&aacute;n enviadas a los Workers siguiento una pol&iacute;tica 
+
+    <a href="https://en.wikipedia.org/wiki/Round-robin_scheduling">round robin </a>.
+    El actor Master espera hasta que los workers finalicen su trabajo y envia el resultado al Listener para
+    agregaci&oacute;n.
+</p>
+
+<p>
+    El primer paso es definir los cuatro mensajes necesarios:
+</p>
+
+<ul>
+    <li>
+        Calculate: enviado por el actor Master para iniciar el computo.
+    </li>
+    <li>
+        Work: enviado por el actor Master a los actores Worker conteniendo el mensaje a ser procesado.
+    </li>
+    <li>
+        Result: enviado por los actores Worker a el actor Master conteniendo el resultado del computo.
+    </li>
+    <li>
+        Index: enviado por el actor Master a el actor Listener conteniendo la lista de palabras a ser indexadas
+        y el tiempo total de computo.
+    </li>
+</ul>
+
+<p>
+  <a href="http://www.codecommit.com/blog/scala/case-classes-are-cool"> Case classes </a> en scala 
+  son &uacute;tiles para crear objectos inmutables, las usaremos para crear los mensajes:
+</p>
+
+
+<pre>
+  sealed trait WordIndexMessage
+
+  case object Calculate extends WordIndexMessage
+
+  case class Work(line: String) extends WordIndexMessage
+
+  case class Result(words: Array[String]) extends WordIndexMessage
+
+  case class Index(words: ArrayBuffer[String], duration: Duration)
+
+</pre>
+
+
+
+<h3> Creando el actor worker </h3>
+
+<p>
+    El actor worker es creado herando el trait <code>Actor</code> 
+    y definiendo el m&eacute;todo <code> receieve </code>
+</p>
+
+<pre>
+  class Worker extends Actor {
+      // count words
+      def receive = {
+        // ! means “fire-and-forget”. Also known as tell.
+        case Work(line) => sender ! Result(splitLine(line)) // perform the work
+      }
+
+      def splitLine(line: String): Array[String] = {
+        line.split(",");
+      }
+  }
+</pre>
+
+
+<h3> Creando el actor master </h3>
+
+
+<p>
+    El actor Master recibe en su constructor 2 par&aacute;metros :
+</p>
+
+<ul>
+    <li>
+        nrOfWorkers: define el n&uacute;mero de workers que deben ser iniciados.
+    </li>
+    <li>
+        itLines: String Iterator que continene las l&iacute;neas a ser procesadas.
+    </li>
+</ul>
+
+<p>
+    El actor Master recibe un conjunto de l&iacute;neas desde alg&uacute;n proceso externo,
+    el actor Master crea nrOfWorkers Workers y  envia las l&iacute;neas a ser procesadas.
+    Una vez todos los workers han finalizado, el actor Master retorna el resultado al proceso
+    externo que llamo al actor Master inicialmente. El c&oacute;digo a continuaci&oacute;n 
+    implementa esta funcionalidad:
+</p>
+
+<pre>
+  class Master(nrOfWorkers: Int, itLines: Iterator[String], listener: ActorRef)
+    extends Actor {
+    val messagesPercall = 100
+    var words = ArrayBuffer.empty[String]
+    val start: Long = System.currentTimeMillis
+    var nrOfResults: Int = _
+    var nrOfLines: Int = 0
+
+    // create a round-robin router to make it easier to spread out the work between the workers
+    val workerRouter = context.actorOf(
+      Props[Worker].withRouter(RoundRobinRouter(nrOfWorkers)), name = "workerRouter")
+
+
+    def receive = {
+      case Calculate =>
+        //sent to the workers all lines in groups of nrOfLines items
+        while (itLines.nonEmpty) {
+          for (line <- itLines.take(messagesPercall)) {
+            nrOfLines += 1
+            workerRouter ! Work(line)
+          }
+        }
+
+      case Result(value) =>
+        words.appendAll(value)
+        nrOfResults += 1
+        if (nrOfResults == nrOfLines) {
+          // Send the result to the listener
+          listener !Index(words, duration = (System.currentTimeMillis - start).millis)
+          // Stops this actor and all its supervised children
+          context.stop(self)
+        }
+    }
+  }
+</pre>
+
+
+<h3> Creando el actor listener </h3>
+
+
+<p>
+    El actor Result Listener  recibe la lista de palabras producida por los workers y actualiza
+    el &iacute;ndice en disco duro:
+</p>
+
+<pre>
+   class Listener extends Actor {
+    val rootDir = "/tmp/wordcount"
+    var nrOfWords: Int = 1;
+    var src: Source = _;
+
+    def indexWord(word: String) {
+      val filePath = Paths.get(rootDir, word)
+      def computeValue() {
+        def wordExist(): Boolean = {
+          return Files.exists(filePath)
+        }
+
+        //If word file does not exists, create it
+        if (!wordExist()) {
+          Files.createFile(filePath)
+          src = Source.fromFile(filePath.toString())
+        } else {
+          src = Source.fromFile(filePath.toString())
+          nrOfWords = src.getLines().toList{0}.toInt
+        }
+
+        src.close()
+      }
+
+      def updateValue() {
+        val file = new File(filePath.toString())
+        val bw = new BufferedWriter(new FileWriter(file))
+        bw.write(nrOfWords.toString())
+        bw.close()
+      }
+
+      computeValue()
+      updateValue()
+    }
+
+    def receive = {
+      case Index(words, duration) =>
+        words.foreach(indexWord)
+        println("\nCalculation time: %s".format(duration))
+        context.system.shutdown()
+    }
+  }
+</pre>
+
+<h3> Iniciando el computo </h3>
+
+
+<p>
+    Crearemos una clase llamada Indexer que extender&aacute; el trait App en Scala, esta clase 
+    podr&aacute; ser ejecuta desde consola:
+</p>
+
+
+<pre>
+
+    object Indexer extends App {
+
+      calculate(nrOfWorkers = 4)
+
+      // actors and messages ...
+      def calculate(nrOfWorkers: Int) {
+
+        //Open file with words
+        val wordLines = Source.fromInputStream(getClass.getResourceAsStream("/words.txt")).getLines()
+
+        // Create an Akka system
+        val system = ActorSystem("WordCountSystem")
+
+        // create the result listener, which will print the result and will shutdown the system
+        val listener = system.actorOf(Props[Listener], name = "listener")
+
+        // create the master
+        val master = system.actorOf(Props(new Master(
+          nrOfWorkers, wordLines, listener)),
+          name = "master")
+
+        // start the calculation
+        master ! Calculate
+      }
+    }
+
+</pre>
+
+<p>
+    A continuaci&oacute;n el c&oacute;digo completo:
+</p>
+
+<pre>
+
+    package com.notempo1320.demo
+
+    import akka.actor._
+    import akka.routing.RoundRobinRouter
+    import scala.concurrent.duration._
+
+    import java.nio.file.{Paths, Files}
+    import java.io._
+
+    import scala.collection.mutable.ArrayBuffer
+    import scala.io.{Source, BufferedSource}
+
+
+    object Indexer extends App {
+
+      calculate(nrOfWorkers = 4)
+
+
+      sealed trait WordIndexMessage
+
+      case object Calculate extends WordIndexMessage
+
+      case class Work(line: String) extends WordIndexMessage
+
+      case class Result(words: Array[String]) extends WordIndexMessage
+
+      case class Index(words: ArrayBuffer[String], duration: Duration)
+
+      class Worker extends Actor {
+
+          def splitLine(line: String): Array[String] = {
+            line.split(",");
+          }
+
+          // count words
+          def receive = {
+            // ! means “fire-and-forget”. Also known as tell.
+            case Work(line) => sender ! Result(splitLine(line)) // perform the work
+          }
+
+      }
+
+
+      class Master(nrOfWorkers: Int, itLines: Iterator[String], listener: ActorRef)
+        extends Actor {
+        val messagesPercall = 100
+        var words = ArrayBuffer.empty[String]
+        val start: Long = System.currentTimeMillis
+        var nrOfResults: Int = _
+        var nrOfLines: Int = 0
+
+        // create a round-robin router to make it easier to spread out the work between the workers
+        val workerRouter = context.actorOf(
+          Props[Worker].withRouter(RoundRobinRouter(nrOfWorkers)), name = "workerRouter")
+
+
+        def receive = {
+          case Calculate =>
+            //sent to the workers all lines in groups of nrOfLines items
+            while (itLines.nonEmpty) {
+              for (line <- itLines.take(messagesPercall)) {
+                nrOfLines += 1
+                workerRouter ! Work(line)
+              }
+            }
+
+          case Result(value) =>
+            words.appendAll(value)
+            nrOfResults += 1
+            if (nrOfResults == nrOfLines) {
+              // Send the result to the listener
+              listener !Index(words, duration = (System.currentTimeMillis - start).millis)
+              // Stops this actor and all its supervised children
+              context.stop(self)
+            }
+        }
+      }
+
+
+
+      class Listener extends Actor {
+        val rootDir = "/tmp/wordcount"
+        var nrOfWords: Int = 1;
+        var src: Source = _;
+
+        def indexWord(word: String) {
+          val filePath = Paths.get(rootDir, word)
+          def computeValue() {
+            def wordExist(): Boolean = {
+              return Files.exists(filePath)
+            }
+
+            //If word file does not exists, create it
+            if (!wordExist()) {
+              Files.createFile(filePath)
+              src = Source.fromFile(filePath.toString())
+            } else {
+              src = Source.fromFile(filePath.toString())
+              nrOfWords = src.getLines().toList{0}.toInt
+            }
+
+            src.close()
+          }
+
+          def updateValue() {
+            val file = new File(filePath.toString())
+            val bw = new BufferedWriter(new FileWriter(file))
+            bw.write(nrOfWords.toString())
+            bw.close()
+          }
+
+          computeValue()
+          updateValue()
+        }
+
+        def receive = {
+          case Index(words, duration) =>
+            words.foreach(indexWord)
+            println("\nCalculation time: %s".format(duration))
+            context.system.shutdown()
+        }
+      }
+
+      def calculate(nrOfWorkers: Int) {
+
+        //Open file with words
+        val wordLines = Source.fromInputStream(getClass.getResourceAsStream("/words.txt")).getLines()
+
+        // Create an Akka system
+        val system = ActorSystem("WordCountSystem")
+
+        // create the result listener, which will print the result and will shutdown the system
+        val listener = system.actorOf(Props[Listener], name = "listener")
+
+        // create the master
+        val master = system.actorOf(Props(new Master(
+          nrOfWorkers, wordLines, listener)),
+          name = "master")
+
+        // start the calculation
+        master ! Calculate
+      }
+
+    }
+</pre>
+
+
+<h3> Compilando y ejecutando el c&oacute;digo</h3>
+
+<pre>
+    $sbt clean compile
+    $sbt run
+</pre>
+
+
+<h2> Referencias</h2>
+
+<ul>
+    <li> <a href="https://en.wikipedia.org/wiki/Akka_(toolkit)"> Wikipedia </a>
+    </li>
+    <li>
+        <a href="http://doc.akka.io/docs/akka/2.0/intro/getting-started-first-scala.html">
+            Getting started with akka </a>
+    </li>
+    <li>
+        <a href="http://doc.akka.io/docs/akka/2.2.0/scala/actors.html"> Akka actors
+        </a>
+    </li>
+    <li>
+        <a href="http://www.scala-sbt.org/"> sbt  </a>
+    </li>
+    <li>
+       <a href="https://en.wikipedia.org/wiki/Round-robin_scheduling"> Round Robin </a>
+    </li>
+
+    <li>
+       <a href="http://stackoverflow.com/questions/11203268/what-is-a-sealed-trait"> What is a sealed trait?  </a>
+    </li>
+
+</ul>
