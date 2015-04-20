@@ -2,20 +2,25 @@
 
     <img style="width:30%; float:left;" class="img-thumbnail" src="http://spray.io/img/logo-large.png" />
     <p style="width:69%; float:left; padding:0 2px;">
-    <a href="http://spray.io">Spray </a> is a suite of lightweight Scala libraries providing client and server-side REST/HTTP support on top of <a href="http://www.maigfrga.ntweb.co/akka-toolkit-introduction/">Akka toolkit</a>. It provides a set of integrated components for most of REST/HTTP needs.
-    In this post we are going to create a simple restful API with spray.
+    <a href="http://spray.io">Spray </a> es un conjunto de librer&iacute;as escritas en Scala que proveen
+    soporte para aplicaciones REST/HTTP basadas en 
+    <a href="http://www.maigfrga.ntweb.co/akka-toolkit-introduction/"> akka toolkit</a>. En este post crearemos
+    un servicio simple con spray.
     </p>
 </div>
 
-<h2> Getting Started </h2>
+<h2> Primeros pasos </h2>
 
 
 <p>
-    Spray can run as an standalone service or inside a servlet container. There is a 
-    <a href="https://github.com/spray/spray-template/"> spray template project on github </a> that can be used as starting point. This github repository has  different branches, one branch for every possible
-    configuration, we will clone this repo and we will use the branch  <code> on_spray-can_1.3_scala-2.11 </code>. This branch contains the structure for a standalone spray-can, Scala 2.11 + Akka 2.3 + spray 1.3
+    Spray puede ser ejecutado como un servicio independiente (standalone) o en un contenedor de servlets. Existe
+    un
+    <a href="https://github.com/spray/spray-template/"> proyecto de ejemplo en  github </a> 
+    que puede ser usado como punto inicial. Este repositorio tiene diferentes branches, uno por cada 
+    configuraci&oacute;n posible. En este post clonaremos este repositorio y copiaremos la estructura
+    existente en el branch <code> on_spray-can_1.3_scala-2.11 </code> el cual contiene un ejemplo
+    de aplicaci&oacute;n base standalone spray-can, Scala 2.11 + Akka 2.3 + spray 1.3.
 </p>
-
 
 <pre>
      git clone git@github.com:spray/spray-template.git
@@ -24,10 +29,10 @@
 
 
 
-<h3>Running tests, Starting and stopping applicaton </h3>
+<h3>Ejecutando los test, iniciando y parando la aplicaci&oacute;n </h3>
 
 <p>
-    Running tests:
+    Ejecutando los  tests:
 </p>
 
 <pre>
@@ -35,7 +40,7 @@
 </pre>
 
 <p>
-    To run server you need to execute <code> sbt</code>:
+    Para iniciar el servidor debemos ejecutar el comando <code> sbt</code>:
 </p>
 
 <pre>
@@ -49,7 +54,7 @@
 </pre>
 
 <p>
-    You can now request the applicaton using <code> curl </code> command:
+    Podemos usar el comando <code> curl </code> para comunicarnos con el servidor:
 </p>
 
 <pre>
@@ -57,7 +62,7 @@
 </pre>
 
 <p>
-    Stopping application:
+    Deteniendo la aplicaci&oacute;n:
 </p>
 
 <pre>
@@ -67,20 +72,19 @@
 </pre>
 
 
-<h2> User Resource Example </h2>
+<h2> Ejemplo Recurso Rest User </h2>
 <p>
-    We are going to implement a basic CRUD for a user resource. Just Crate and Get for now.
+    Vamos a implmentar un simple CRUD para un recurso user, solo Crear y consultar por ahora.
 </p>
 
 
-<h3> Json serializer</h3>
+<h3> Serializador Json </h3>
 
 <p>
-  In order   to handle json serialization,  we will use 
-        <a href="https://github.com/spray/spray-jsonhttps://github.com/spray/spray-json">spray-json </a> to
-        create the class <code>com.notempo1320.ApiJsonProtocol </code> that will implement
-        a custom json protocol:
+   Usaremos la librer&iacute;a    <a href="https://github.com/spray/spray-jsonhttps://github.com/spray/spray-json">spray-json </a> para crear la clase  <code>com.notempo1320.ApiJsonProtocol </code> la cual implementar&aacute;
+   un protocolo json personalizado:
 </p>
+
 
 <pre>
 
@@ -101,14 +105,14 @@
 </pre>
 
 
-<h3> User Service</h3>
+<h3>Servicio User</h3>
 
 <p>
-    We are going to create a class child of <code>spray.routing.HttpService</code> that will implement the Restful http
-    logic. This class uses functionality from <a href=""> spray-routing  </a> module, this module
-    provides a high-level routing DSL for defining RESTful web services.
+    Ahora crearemos una clase hija de la clase  <code> spray.routing.HttpService </code>
+    la cual implementar&aacute; la l&oacute;gica http Restful. Esta clase usar&aacute; funcionalidad
+    del m&oacute;dulo <a href=""> spray-routing  </a>  el cual implmenta una interfaz para definir
+    servicios web Restful.
 </p>
-
 
 <pre>
     // this trait defines our service behavior independently from the service actor
@@ -139,15 +143,14 @@
 </pre>
 
 <p>
-    The code above use <a href="http://spray.io/documentation/1.2.3/spray-routing/key-concepts/routes/">routes 
-    </a>  to deliver the request to the appriate component.
+    El anterior c&oacute;digo utiliza <a href="http://spray.io/documentation/1.2.3/spray-routing/key-concepts/routes/">routes 
+    </a>  para direccionar la petici&oacute;n al componente apropiado.
 </p>
 
-
-<h3> User Actor </h3>
+<h3> Actor User  </h3>
 
 <p>
-    Now we will create an Actor that will wrap UserService logic:
+    Crearemos ahora un actor que usar&aacute; la l&oacute;gica implementada en el servicio:
 </p>
 
 
@@ -167,12 +170,11 @@
     }
 </pre>
 
-
-<h3> Api class </h3>
+<h3> Clase Api  </h3>
 
 <p>
-    Api class is a  console command wich will be responsible to run 
-    <a href="http://spray.io/documentation/1.2.3/spray-can/" > spray-can  </a> server:
+    La clase api es un comando de consola encargado de iniicar el servidor
+    <a href="http://spray.io/documentation/1.2.3/spray-can/" > spray-can  </a>:
 
 </p>
 
@@ -201,7 +203,7 @@
 </pre>
 
 
-<h3> Updating Configuration file build.sbt</h3>
+<h3> Actualizando archivo de configuraci&oacute;n build.sbt</h3>
 
 <pre>
 
@@ -236,23 +238,23 @@
     mainClass in Revolver.reStart := Some("com.notempo1320.Api")
 </pre>
 
-<h3> Creating an user</h3>
+<h3> Creando un usuario</h3>
 
 <pre>
     curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X POST -d '{"username": "myname", "email": "mymail@server.com"}' http://localhost:7000/user
 </pre>
 
-<h3> Getting a list of users</h3>
+<h3> Obteniendo una lista de usuarios</h3>
 
 <pre>
   curl http://localhost:7000/user
 </pre>
 
 <p>
-You can find source code of this example <a href="https://github.com/maigfrga/blog/tree/master/2015/04/sprayio-intro/demo"> here </a>
+El c&oacute;digo fuente de este ejemplo  <a href="https://github.com/maigfrga/blog/tree/master/2015/04/sprayio-intro/demo"> se encuentra en este enlace </a>
 
 </p>
-<h2> References </h2>
+<h2> Referencias </h2>
 
 
 <ul>
