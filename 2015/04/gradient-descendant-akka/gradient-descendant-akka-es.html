@@ -2,22 +2,29 @@
 
     <img style="width:29%; float:left;" class="img-thumbnail" src="http://upload.wikimedia.org/wikipedia/commons/6/68/Gradient_ascent_%28surface%29.png" />
     <p style="width:69%; float:left; padding:0 3px;">
-      <a href="https://www.youtube.com/watch?v=umAeJ7LMCfU">Gradient descent </a> is an algorithm that minimizes functions, it starts at some initial random point,
-    and iterates until it finds the smallest error margin. This algorimth is commonly used to calculate margin error on statistical anaylisis shuch as linear regression.
-      In this post We will implement gradient descent algorithm  using <a href="http://www.maigfrga.ntweb.co/akka-toolkit-introduction/">akka toolkit. </a> 
+      <a href="https://www.youtube.com/watch?v=umAeJ7LMCfU">Gradiente descendiente </a> es un algoritmo
+      que minimiza funciones, inicia en un punto aleatorio e itera hasta encontrar el m&iacute;nimo 
+      margen de error. Este algorimo es usado para calcular margen de error en an&aacute;lisis estad&iacute;sticos
+      tales como regresi&oacute;n linear.
+      En este post implmentaremos el algorimto de gradiente descendiente usando
+       <a href="http://www.maigfrga.ntweb.co/akka-toolkit-introduction/">akka toolkit. </a>
 
     </p>
 
 </div>
 
-<h2> Linear Regresion and Cost Function  </h2>
+<h2> Regresi&oacute;n linear y Funci&oacute;n de costo  </h2>
 <p>
-    We can use standard equation <code> y = mx + b</code> to model our set of points, nevertheless, the precision of our model dependens of how accurate  the values <code> m </code> and <code> b </code> are, in other words,
-    we will need to find the best <code> m </code> and <code> b </code> values. A <strong> cost function J (θ0, θ1)</strong> is a function that is used to measure how good a line fits into the data.
+    Podemo usar la ecuaci&oacute;n standard <code> y = mx + b</code>  para modelar nuestro conjunto de 
+    datos, sin embargo, la presici&oacute;n de nuestro modelo depende de que tan adecuados son los valores
+     <code> m </code> and <code> b </code> , en otras palabras, necesitamos encontrar los mejores valores
+    <code> m </code> y <code> b </code>. La <strong> funci&oacute;n de costo J (θ0, θ1)</strong> es usada
+    para medir que tan bien se adaptan los valores <code> m </code> y <code> b </code> a nuestro conjunto de datos.
 </p>
 
 <p>
-    In order to calculate the cost function we will iterate over all (x, y) points and we will sume the  square distances between each point’s y value and the candidate line’s y value (computed at mx + b).
+    Podemos calcular nuestra funci&oacute;n de costo iterando sobre todos los puntos  (x, y) y sumando
+    la diferencia al cuadrado de cada punto (y) con el valor candidato calculado como ( mx + b).
 </p>
 
 <pre>
@@ -37,35 +44,38 @@
   }
 </pre>
 
+<h2> Algoritmo de Gradiente descendiente  </h2>
 
 
-<h2> Gradient descent Algorithm </h2>
 <p>
-    This Algorithm is used to minimize the cost function finding the the best values (θ0, θ1) for our standard equation <code> hθ(x)= θ0 + θ1x </code>.
+   Este algoritmo es usado para minimzar la funcion de costo,  encontrando los mejores valores (θ0, θ1) 
+   para nuestra ecuaci&oacute;n  <code> hθ(x)= θ0 + θ1x </code>.
 </p>
+
 <p>
-    Before start to code we will write the steps required to implement this algorithm:
+    Antes de empezar a programar, escribiremos los pasos necesarios para implementar este algoritmo:
 </p>
 
 <ol>
     <li>
-        Select a random starting values θ0 and θ1.
+        Seleccionar valores aleatorios iniciales θ0 y θ1.
     </li>
 
     <li>
-        Take the gradient at your location.
+        Calcular la gradiente en esta ubicaci&oacute;n
     </li>
 
     <li>
-        Move your location in the opposite direction of your gradient just a bit. Specifically, take your gradient and subtract  some value <code> alpha </code>. This variable
-        <code> alpha </code> is a small number that ideally should be passed by configuration so that would be easy change this value in order to adjust (tune) the algorithm.
+        Mover la ubicaci&oacute;n en la direcci&oacute;n opuesta a la gradiente, solo un poco. Es decir, tomar
+        la gradiente y restarle algun valor <code> alpha </code> el cual ser&aacute; un n&uacute;mero 
+        peque&ntilde;o que debe ser pasado por configuraci&oacute;n de modo q sea sencillo cambiarlo
+        para ajustar gradualmente el algoritmo.
     </li>
 
     <li>
-        Repeat steps 2 and 3 until you’re satisfied and repeating them more doesn’t help you too much.
+        Repetir pasos 2 y 3 hasta que iteraciones adicionales no ayuden mucho.
     </li>
 </ol>
-
 
 <pre>
 
@@ -105,45 +115,46 @@
   }
 </pre>
 
-<h2> Algorithm implementation using Akka toolkit</h2>
+<h2> Implementaci&oacute;n del algoritmo usando Akka toolkit </h2>
 
 <p>
- We are going to follow the steps  described on my previous post  <a href="http://www.maigfrga.ntweb.co/akka-toolkit-introduction/"> akka toolkit introduction. </a> so I won't cover basic steps such as intial setup.
+ Vamos a seguir los pasos descritos en mi post previo a cerca 
+ <a href="http://www.maigfrga.ntweb.co/akka-toolkit-introduction/"> akka toolkit. </a> Por lo tanto no 
+ cubrir&eacute; temas b&aacute;sicos como instalaci&oacute;n.
  
 </p>
 
 
 <p>
-    In order implement the algorithm  we will need to define 6 messages:
+    Debemos definir 6 mensajes para implementar el algoritmo:
 </p>
 
 <ul>
     <li>
-        ComputeIntercept: sent to the Master actor to start the calculation.
+        ComputeIntercept: enviado al Master para iniciar el computo.
     </li>
     <li>
-       CalculateGradient: sent from the Master actor to the Worker actors to compute the gradient.
+       CalculateGradient: enviado por el actor Master  a los actores Worker actors  para calcular la gradiente.
     </li>
     <li>
-       CalculateCost: sent from the Master actor to the Worker actors to compute error cost.
+       CalculateCost: enviado por el actor Master a los actores Worker para calcular el margen de error.
     </li>
     <li>
-        GradientResult: sent from the Worker actors to the Master actor containing the result from
-        the worker’s gradient calculation.
+        GradientResult: enviado por los actores Worker a el actor  Master conteniendo el resultado de la
+        gradiente.
     </li>
     <li>
-        CostResult: sent from the Worker actors to the Master actor containing the result from
-        the worker’s cost calculation.
+        CostResult:  enviado por los actores Worker a el actor Master con el resultado del margen de error.
     </li>
     <li>
-        InterceptResult: Sent from the Master actor to the Listener actor contaning values (θ0, θ1)
-        for our standard equation <code> hθ(x)= θ0 + θ1x </code>, the cost of use these values  and
-         how long time the calculation took.
+        InterceptResult: Enviado por el actor Master al actor Listener conteniendo los valores (θ0, θ1)
+        para la ecuaci&oacute;n <code> hθ(x)= θ0 + θ1x </code>, el costo de usar estos valores, y cuanto 
+        tiempo tomo el calculo.
     </li>
 </ul>
 
 <p>
-    Below the complete implementation:
+    A continuaci&oacute;n la implementaci&oacute;n completa:
 </p>
 
 <pre>
@@ -384,18 +395,17 @@
 
 </pre>
 
-
-
-<h2> Running the application </h2>
+<h2> Ejecutando la aplicaci&oacute;n </h2>
 
 <p>
-    I am going to use the <a href="https://github.com/maigfrga/blog/blob/master/2015/03/linear-regession/total_by_period.csv"> same dataset</a> that I used on a <a href"http://www.maigfrga.ntweb.co/regresion-lineal-adopcion-internet-en-colombia/"> previous post about linear regression </a>. In that post, I used <a href="https://gnu.org/software/octave/"> Octave </a> to compute the cost function for my dataset and I
-    got the results  θ0 = 2.1368e+05 and θ1x =  2.3589e+03.
+   Voy a usar  <a href="https://github.com/maigfrga/blog/blob/master/2015/03/linear-regession/total_by_period.csv">el set de datos</a>  que utilic&eacute; en mi   <a href"http://www.maigfrga.ntweb.co/regresion-lineal-adopcion-internet-en-colombia/"> post previo sobre regresi&oacute;n linear. </a>. 
+   En ese post utilic&eacute; <a href="https://gnu.org/software/octave/"> Octave </a>  para calcular la 
+   funci&oacute;n de costo para mi set de datos, obtiendo los valores θ0 = 2.1368e+05 and θ1x =  2.3589e+03.
 </p>
 
 
 <p>
-To run the akka application as a console command all you have to do is call it usign <code> sbt </code>
+Para ejecutar la aplicaci&oacute;n akka como comando de consola se debe llamar el comando <code> sbt </code>.
 </p>
 
 <pre>
@@ -403,19 +413,19 @@ To run the akka application as a console command all you have to do is call it u
 </pre>
 
 <p>
-    I tried different parameters combinations and this was the result that I got:
+    A continuaci&oacute;n los resultados de ejecutar el algorimto con diferentes par&aacute;metros:
 </p>
 
 <table class="table">
       <thead>
         <tr>
-          <th>Learning Rate</th>
-          <th>Number of Iterations</th>
-          <th>Number of Workers</th>
-          <th>θ0 Result</th>
-          <th>θ1 Result</th>
-          <th> Cost</th>
-          <th>Execution time </th>
+          <th>Taza de aprendizaje</th>
+          <th>N&uacute;mero de iteraciones</th>
+          <th>N&uacute;mero de Workers</th>
+          <th>Resultado  θ0 </th>
+          <th>Resultado θ1</th>
+          <th> Costo</th>
+          <th>Tiempo de ejecuci&oacute;n</th>
         </tr>
       </thead>
       <tbody>
@@ -494,13 +504,14 @@ To run the akka application as a console command all you have to do is call it u
       </tbody>
 </table>
 
-
 <p>
-    The data above showed me that this algorithm works better if I increase the number of iterations and
-    after 20000 iterations there are not significants improvements. Maybe the outcome could be different
-    with another set of data. At this <a href="https://github.com/maigfrga/blog/tree/master/2015/04/gradient-descendant-akka"> You can find the source code of this example </a>
+    La informaci&oacute;n obtenida sugiere que el algoritmo funciona mejor con 20 mil iteraciones,
+    iteraciones adicionales no aparentar ser muy significativas, los resultados puede varias con 
+    un set de datos diferente.
+    <a href="https://github.com/maigfrga/blog/tree/master/2015/04/gradient-descendant-akka"> El 
+    c&oacute;digo fuente de este ejemplo puede ser descargado en este enlace.</a>
 </p>
-<h2> References </h2>
+<h2> Referencias </h2>
 
 <ul>
     <li>
