@@ -1,5 +1,4 @@
-organization  := "com.notempo1320"
-
+organization  := "com.notempo1320" 
 version       := "0.1"
 
 scalaVersion  := "2.11.6"
