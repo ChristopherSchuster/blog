@@ -1,17 +1,22 @@
 <div style="width:100%;float:left;">
     <img style="width:24%; float:left; padding: 0 1% 0 0" src="http://akka.io/resources/images/akka_full_color.svg"> </img>
     <p style="float:left; width:74%;">
-        Reactive Streams is an initiative to provide a standard for asynchronous stream processing with non-blocking back pressure,
-        <a href="http://akka.io/"> akka toolkit team </a> is working on an implementation of this standard. At the moment of write this post (June 2015) the api is still experimental but functional. 
-        This post is about how to extract information from <a href="https:twitter.com"> twitter </a>  using scala, akka toolkit and reactive streams.
+        Reactive Streams  es una iniciativa para generar un  standard para procesamiento as&iacute;ncrono
+        de flujos de datos,
+        <a href="http://akka.io/"> El equpo de akka toolkit  </a> esta trabajando en una implementaci&oacute;n
+        de este standard. Al momento de publicaci&oacute;n de este post (Junio 2015) el api es 
+        a&uacute;n experimental pero funciona correctamente. 
+        Este post  habla sobre como extraer informaci&oacute;n desde <a href="https:twitter.com"> twitter </a> 
+         usando scala, akka toolkit y reactive streams.
     </p>
 </div>
 
-<h2> Interacting with Tiwtter  </h2>
+<h2> Interactuando con Tiwtter  </h2>
 
 <p>
-    There is not an official Twitter client for scala, but We can use <a href="http://twitter4j.org/en/index.html"> Twitter4j </a> that is an unofficial java client that get the job done
-    easy, below, and example about how you can use <a href="http://twitter4j.org/en/index.html"> Twitter4j </a>  in scala:
+    No hay un cliente oficial de Twitter para scala sin embargo podemos usar
+ <a href="http://twitter4j.org/en/index.html"> Twitter4j </a>  que tampoco es oficial pero funciona bien y es
+    f&aacute;ciel de usar, a continuaci&oacute;n,  un ejemplo de como usar <a href="http://twitter4j.org/en/index.html"> Twitter4j </a>  en scala:
 </p>
 
 <pre>
@@ -33,60 +38,57 @@
  
 </pre>
 
-
 <p>
-    We will build an command line application that will search tweets and hastags by some term and it will process this information.
+ Vamos a crear una aplicaci&oacute;n de l&iacute;nea de comandos que buscara tweets y los indexara por 
+ contenido, usuarios y hashtags.
 </p>
 
 <h2> Akka streams </h2>
 
 <p>
-    At the moment of publication of this post (June 2015), akka streams is still experimental so in order to use it We will need to add experimental repository to our sbt config file:
+    Al momento de publicaci&oacute;n de este post (Junio 2015), akka streams es experimental, para importarlo
+    correctamente en nuestro proyecto debemos agregar las siguientes l&iacute;neas a nuestro archivo de 
+    configuraci&oacute;n sbt:
 </p>
 
 <pre>
     "com.typesafe.akka" % "akka-stream-experimental_2.11" % "1.0-RC3"
 </pre>
 
-<h3> Basic concepts </h3>
+
+<h3> Conceptos b&aacute;sicos </h3>
 
 <p>
-    There are some basic concepts taken from
+   A continuaci&oacute;n algunos conceptos b&aacute;sicos muy importantes extraidos de 
     <a href="http://doc.akka.io/docs/akka-stream-and-http-experimental">
-    experimental akka stream documentation </a>  that are very important as
-    they are required to undestand in order to
-    implement reactive streams applications sucessfully:
+    experimental akka stream documentation </a>  que son muy importantes de entender para construir
+    aplicaciones reactivas:
 </p>
 
 <ul>
     <li>
-        Source: A processing stage with exactly one output emitting data
-        elements whenever downstream processing stages are ready to receive them.
+        Source: Etapa de procesamiento con exactamente una entrada.
     </li>
     <li>
-        Sink: A processing stage with exactly one input, requesting and accepting data elements possibly
-        slowing down the upstream producer of elements.
+        Sink: Etapa de procesamiento con exactamente una salida.
     </li>
     <li>
-        Flow: A processing stage which has exactly one input and output, which connects its up- and
-        downstreams by transforming the data elements flowing through it.
+        Flow: Etapa de procesamiento con una entrada y una salida.
     </li>
 
 </ul>
 
-<h3>  Building and Running a Flow from a String </h3>
+<h3>  Construyendo y ejecutando un flujo a trav&eacute;s de un String </h3>
 
 
 <p>
-    In order to run a Stream We need at least one input Source and one output Sink.
-    In the example below, We create a Source from a String iterator created when We split a string.
-    It is possible manipulate a source as We can see in this example, We remove extra blank spaces with
-    trim and  then we convert every line to uppercase.
-    A Source for itself can't do nothing, a Flow or a Sink is required to continue the computation, in
-    the example code below we send the strings processed by the Source to a Sink using the method
-     <code> runForeach </code>:
+    Para poder ejecutar un Flujo(Stream) necesitamos al menos un Source o fuente de entrada
+    y un Sink o desague de salida. En el siguiente ejemplo creamos una Fuente desde un iterador de Strings.
+    Luego manipulamos cada l&iacute;nea para remover espacios, transformar el texto, etc.
+    Una fuente por si sola no puede hacer nada, debe encadenarse a un Fluju(Flow) o a un desague (Sink),
+    en el suguiente ejemplo usamos la funci&oacute;n  <code> runForeach </code> para transferir el Source
+    a un Sink:
 </p>
-
 
 <pre>
     implicit val system = ActorSystem("Sys")
@@ -111,13 +113,12 @@
       .onComplete(_ => system.shutdown())
 </pre>
 
-
-<h3> Building a simple Graph </h3>
+<h3> Construyendo un grafo sencillo </h3>
 
 <p>
-Graphs are useful when we want to perform any kind of fan-in ("multiple inputs") or fan-out
- ("multiple outputs") operations. In the code below We will use the source that We created before
- and We will send every line to a text file and to the console:
+    Grafos son necesarios cuando se desee realizar una operacion   fan-in ("varias entradas") o fan-out
+ ("varias salidas"). En el ejemplo a continuaci&oacute;n  usaremos la Source inicial 
+ y la enviaremos a dos sitios simultaneamente: a la consola de comandos y a una archivo de texto:
 </p>
 
 
@@ -174,15 +175,14 @@ Graphs are useful when we want to perform any kind of fan-in ("multiple inputs")
 </pre>
 
 
-<h2> Reactive tweets </h2>
+<h2> Tweets Reactivos </h2>
 
 
 <p>
-    Our goal is to build an akka application that uses reactive streams to get tweets from twitter
-    and classify them by author and content. To do that, We will create a tweets source quering data from
-    twitter and We will mantain 3 indexes: tweets, authors, hashtags. A simplfied draw of the process
-    would look like this:
-
+    Nuestro objetivo es construir una aplicaci&oacute;n basada en akka toolkit que usara
+    reactive streams para extraer tweets de twitter, clasificandolos por contenido y autor. Para hacer esto
+    crearemos 3 &iacute;ndidices: tweets, authors, hashtags, a continuaci&oacute;n un diagrama
+    simplificado de nuestra soluci&oacute;n:
 </p>
 
 
@@ -204,10 +204,11 @@ Graphs are useful when we want to perform any kind of fan-in ("multiple inputs")
 </pre>
 
 
-<h3> Configuring the client </h3>
+<h3> Configurando el cliente </h3>
+
 
 <p>
-    We will define access keys and tokens as envrioment variables:
+    Extramos credenciales de acceso de variables de entorno:
 </p>
 
 <pre>
@@ -228,7 +229,8 @@ Graphs are useful when we want to perform any kind of fan-in ("multiple inputs")
 
 </pre>
 
-<h3> Building the source </h3>
+
+<h3> Construyendo la fuente </h3>
 
 <pre>
     val client = getClient()
@@ -237,7 +239,7 @@ Graphs are useful when we want to perform any kind of fan-in ("multiple inputs")
 </pre>
 
 
-<h3> Building the Graph </h3>
+<h3> Construyendo el grafo </h3>
 
 <pre>
     val tweetPath = Paths.get(dataDir, "tweets.txt")
@@ -282,10 +284,10 @@ Graphs are useful when we want to perform any kind of fan-in ("multiple inputs")
 </pre>
 
 
-<h2> Running the code </h2>
+<h2> Ejecutando el c&oacute;digo </h2>
 
 <p>
-    First thing required is to set up env variables with twitter access values:
+    Primero debemos definir nuestras credenciales como variables de entorno:
 </p>
 
 <pre>
@@ -297,7 +299,7 @@ Graphs are useful when we want to perform any kind of fan-in ("multiple inputs")
 
 
 <p>
-    Then You can execute <code> sbt </code>:
+    Luego podemos ejecutar <code> sbt </code>:
 </p>
 
 <pre>
@@ -305,10 +307,11 @@ Graphs are useful when we want to perform any kind of fan-in ("multiple inputs")
 </pre>
 
 <p>
-    Source code can be found at this <a href="https://github.com/maigfrga/blog/tree/master/2015/06/twitter-akka-streams"> link </a>
+    El c&oacute;digo fuente de este ejeemplo puede ser encontrado en el siguiente <a href="https://github.com/maigfrga/blog/tree/master/2015/06/twitter-akka-streams"> enlace </a>
 </p>
 
-<h2> References </h2>
+
+<h2> Referencias </h2>
 
 <ul>
     <li>
