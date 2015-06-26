@@ -126,7 +126,6 @@ object RactiveTwitter extends App {
     val client = getClient()
     val query = new Query(term);
     val tweets = Source( () => client.search(query).getTweets.asScala.iterator)
-    //twitter4j.Status
 
     val tweetPath = Paths.get(dataDir, "tweets.txt")
     val tweetSink = SynchronousFileSink(new File(tweetPath.toString), true)

@@ -1,0 +1,340 @@
+<div style="width:100%;float:left;">
+   <img style="width:24%; float:left; padding: 0 1% 0 0" src=""> </img>
+
+    <p style="float:left; width:74%;">
+        Docker is an open-source project that automates the deployment of applications inside 
+        software containers based on Linux Operative System. This post is about how to deploy
+        an akka scala application on docker.
+    </p>
+</div>
+
+<h2> Setting up Docker environment </h2>
+
+
+<h3> Install docker client </h3>
+
+
+<pre>
+    wget https://get.docker.com/builds/Linux/x86_64/docker-latest
+    sudo ln -s /home/manuel/src/dockermachine/docker-latest /usr/bin/docker
+
+</pre>
+
+<h3> Installing Docker Machine </h3>
+<p>
+    Docker Machine lets you create Docker hosts on your computer, cloud providers or inside your own
+    data center. To download it We must go to their
+    <a href="https://github.com/docker/machine"> github website </a>  
+    and choose the rigth version for our platform:
+</p>
+
+<pre>
+    mkdir ~/src/docckermachine
+    cd ~/src/docckermachine
+    wget  https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_linux-amd64
+    sudo ln -s /home/manuel/src/dockermachine/docker-machine_linux-amd64 /usr/bin/docker-machine
+</pre>
+
+<p> 
+    We will create a docker host on virtual box which will run a lightweight Linux distribution (boot2docker) with the Docker daemon installed using the command below:
+
+</p>
+
+<pre>
+    $docker-machine create --driver virtualbox myhost
+
+    Creating CA: /home/manuel/.docker/machine/certs/ca.pem
+    Creating client certificate: /home/manuel/.docker/machine/certs/cert.pem
+    Image cache does not exist, creating it at /home/manuel/.docker/machine/cache...
+    No default boot2docker iso found locally, downloading the latest release...
+    Downloading https://github.com/boot2docker/boot2docker/releases/download/v1.7.0/boot2docker.iso to /home/manuel/.docker/machine/cache/boot2docker.iso...
+    Creating VirtualBox VM...
+    Creating SSH key...
+    Starting VirtualBox VM...
+    Starting VM...
+    To see how to connect Docker to this machine, run: docker-machine env myhost
+
+</pre>
+
+<p>
+    <strong>Note: </strong> In order to create a docker We will use virtualBox, it installation is 
+  straightforward and it won't be covered this post.
+</p>
+
+
+<p>
+    We can verify if the docker machine creation was successfully:
+</p>
+
+<pre>
+    $ docker-machine ls
+    NAME    ACTIVE   DRIVER       STATE     URL                         SWARM
+    myhost   *        virtualbox   Running   tcp://192.168.99.100:2376  
+</pre>
+
+
+<p>
+  Now We can point our docker client to the host machine running the command below:
+</p>
+
+<pre>
+    eval "$(docker-machine env myhost)"
+</pre>
+
+
+<p>
+    We can access the docker machine with the command below:
+</p>
+
+<pre>
+    docker-machine ssh local
+</pre>
+
+<p>
+    To stop and start docker machine:
+</p>
+
+<pre>
+  docker-machine stop myhost
+  docker-machine start myhost
+</pre>
+
+
+<p>
+    We can test our docker installation running the nginx container:
+</p>
+
+<pre>
+     docker run -d -p 8000:80 nginx
+     docker ps
+</pre>
+
+
+<h3> Installing an image </h3>
+<p>
+    We can list the images installed on our docker-machine running the command below:
+</p>
+
+<pre>
+    $ docker-machine ls
+    NAME     ACTIVE   DRIVER       STATE     URL   SWARM
+    myhost            virtualbox   Stopped
+</pre>
+
+<p>
+    We can download a debian image from <a href="https://hub.docker.com/">  Docker hub </a> to the docker host machine with the command below:
+</p>
+
+
+<pre>
+    docker pull debian:latest
+</pre>
+
+
+
+
+<h2> Scala akka Simple tcp server </h2>
+
+<p> 
+    Code below implements a simple tpc echo server using reactive streams:
+</p>
+
+
+<pre>
+    package io.ntdata
+
+    import akka.actor.ActorSystem
+    import akka.pattern.ask
+    import akka.stream.ActorFlowMaterializer
+    import akka.stream.scaladsl.{ Flow, Sink, Source, Tcp }
+    import akka.util.ByteString
+    import scala.concurrent.duration._
+    import scala.util.{ Failure, Success }
+
+    object TcpEcho {
+
+      /**
+       * Use without parameters to start both client and
+       * server.
+       *
+       * Use parameters `server 0.0.0.0 6001` to start server listening on port 6001.
+       *
+       * Use parameters `client 127.0.0.1 6001` to start client connecting to
+       * server on 127.0.0.1:6001.
+       *
+       */
+      def main(args: Array[String]): Unit = {
+        if (args.isEmpty) {
+          val system = ActorSystem("ClientAndServer")
+          val (address, port) = ("127.0.0.1", 6000)
+          server(system, address, port)
+          client(system, address, port)
+        } else {
+          val (address, port) =
+            if (args.length == 3) (args(1), args(2).toInt)
+            else ("127.0.0.1", 6000)
+          if (args(0) == "server") {
+            val system = ActorSystem("Server")
+            server(system, address, port)
+          } else if (args(0) == "client") {
+            val system = ActorSystem("Client")
+            client(system, address, port)
+          }
+        }
+      }
+
+      def server(system: ActorSystem, address: String, port: Int): Unit = {
+        implicit val sys = system
+        import system.dispatcher
+        implicit val materializer = ActorFlowMaterializer()
+
+        val handler = Sink.foreach[Tcp.IncomingConnection] { conn =>
+          println("Client connected from: " + conn.remoteAddress)
+          conn handleWith Flow[ByteString]
+        }
+
+        val connections = Tcp().bind(address, port)
+        val binding = connections.to(handler).run()
+
+        binding.onComplete {
+          case Success(b) =>
+            println("Server started, listening on: " + b.localAddress)
+          case Failure(e) =>
+            println(s"Server could not bind to $address:$port: ${e.getMessage}")
+            system.shutdown()
+        }
+
+      }
+
+      def client(system: ActorSystem, address: String, port: Int): Unit = {
+        implicit val sys = system
+        import system.dispatcher
+        implicit val materializer = ActorFlowMaterializer()
+
+        val testInput = ('a' to 'z').map(ByteString(_))
+
+        val result = Source(testInput).via(Tcp().outgoingConnection(address, port)).
+          runFold(ByteString.empty) { (acc, in) ⇒ acc ++ in }
+
+        result.onComplete {
+          case Success(result) =>
+            println(s"Result: " + result.utf8String)
+            println("Shutting down client")
+            system.shutdown()
+          case Failure(e) =>
+            println("Failure: " + e.getMessage)
+            system.shutdown()
+        }
+      }
+    }
+
+</pre>
+
+
+<p> We can use <a href="https://github.com/sbt/sbt-assembly">SBT Assembly </a> plugin to
+generate a fatjar wich will be the artifact to be deployed on our docker container </p>
+
+<pre>
+    stb assembly
+</pre>
+
+<p>
+    After build the fat jar, run the project is simple:
+</p>
+
+<pre>
+    java -jar target/scala-2.11/ReactiveTCP-assembly-0.0.1.jar server 0.0.0.0 6001
+</pre>
+
+
+
+
+<h2> Building an image from a Dockerfile </h2>
+
+
+<p>
+    We can create an image for our own instead of using an existing one, to do that, We must create
+    a file nemad Dockerfile, this file will contain the instructions required to build our image:
+</p>
+
+
+<p>
+    mkdir akka-image
+    touch akka-image/Dockerfile
+    cp tcp-server/target/scala-2.11/ReactiveTCP-assembly-0.0.1.jar  akka-image
+</p>
+
+<p>
+    Our Dockerfile looks like this:
+</p>
+
+
+<pre>
+    # Debian based image that is able to run an akka app
+    FROM debian:latest
+    MAINTAINER Manuel Ignacio Franco Galeano <maigfrga@gmail.com>
+
+    #install oracle jdk
+    RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true |  /usr/bin/debconf-set-selections 
+
+    RUN echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list
+
+    RUN echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list
+    RUN   apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
+    RUN   apt-get update -y
+    RUN   apt-get install -y oracle-java8-installer 
+    RUN   apt-get install -y oracle-java8-set-default
+
+    USER daemon
+
+    # Adding fatjar file
+    ADD ReactiveTCP-assembly-0.0.1.jar /opt/
+
+    # Exppose port where server will be running
+    EXPOSE 6001
+
+    CMD [ "java", "-jar", "/opt/ReactiveTCP-assembly-0.0.1.jar", "server", "0.0.0.0",  "6001" ]
+
+</pre>
+
+<p>
+    We must run <code> docker build -t simpletcp:v1  akka-image/  </code> to generate the image.
+</p>
+
+<p>
+   After the image creation We can crate a container by running 
+   <code>  docker run -d  -p 6000:6001  simpletcp:v1 </code>
+</p>
+
+
+
+<h2> References </h2>
+
+<ul>
+    <li>
+          <a href="https://docs.docker.com/">  Official docker documentation </a>
+    </li>
+    <li>
+       <a href="https://docs.docker.com/machine/"> Docker machine documentation </a>
+    </li>
+    <li>
+        <a href="https://en.wikipedia.org/wiki/Docker_(software)"> Wikipedia </a>
+    </li>
+    <li>
+         <a href="https://hub.docker.com/">  Docker hub </a>
+    </li>
+
+    <li>
+           <a href="http://www.typesafe.com/activator/template/akka-stream-scala">
+                Akka streams with scala
+           </a>
+     </li>
+    <li>
+        <a href="https://github.com/sbt/sbt-assembly">SBT a ssembly </a>
+    </li>
+
+</ul>
+
+
+
+
