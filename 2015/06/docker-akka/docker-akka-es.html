@@ -2,28 +2,28 @@
    <img style="width:24%; float:left; padding: 0 1% 0 0" src="https://raw.githubusercontent.com/maigfrga/blog/master/2015/06/docker-akka/logo.png"> </img>
 
     <p style="float:left; width:74%;">
-        Docker is an open-source project that automates the deployment of applications inside 
-        software containers based on Linux Operative System. This post is about how to deploy
-        an akka scala application on docker.
+        Docker es un proyecto de c&oacute;digo abierto que automiza el despliegue de aplicaciones
+        al interior de contenedores de software basados en Linux.  Este post nos muestra como desplegar una
+        aplicaci&oacute;n scala-akka usando docker.
     </p>
 </div>
 
-<h2> Setting up Docker environment </h2>
+
+<h2> Configurando nuestro entorno docker </h2>
 
 
-<h3> Install docker client </h3>
+<h3> Instalando el cliente docker </h3>
 
 
 <pre>
     wget https://get.docker.com/builds/Linux/x86_64/docker-latest
     sudo ln -s /home/manuel/src/dockermachine/docker-latest /usr/bin/docker
-
 </pre>
 
-<h3> Installing Docker Machine </h3>
+<h3> Instalando Docker Machine </h3>
 <p>
-    Docker Machine lets you create Docker hosts on your computer, cloud providers or inside your own
-    data center:
+    Docker Machine permite crear docker host en nuestras m&aacute;quinas locales, en la nube o en nuestros
+    centros de datos:
 </p>
 
 <pre>
@@ -34,7 +34,8 @@
 </pre>
 
 <p> 
-    We will create a docker host on virtualbox which will run a lightweight Linux distribution (boot2docker) with the Docker daemon installed using the command below:
+    Ahora crearemos un host docker en virtualbox el cual correr&aacute; una versi&oacute;n ligera de linux
+    (boot2docker) con el proceso docker instalado con el siguiente comando:
 
 </p>
 
@@ -55,13 +56,13 @@
 </pre>
 
 <p>
-    <strong>Note: </strong> In order to create a docker We will use virtualBox, it installation is 
-  straightforward and it won't be covered this post.
+    <strong>Nota: </strong> Necesitamos tener instalado virtualBox para crear el docker host, su
+    instalaci&oacute;n es sencilla y va m&aacute;s alla del alcance de este post .
 </p>
 
 
 <p>
-    We can verify if the docker machine creation was successfully:
+  Podemos verificar si la creaci&oacute;n del host fue exitosa:
 </p>
 
 <pre>
@@ -72,7 +73,7 @@
 
 
 <p>
-  Now We can point our docker client to the host machine running the command below:
+  Ahora podemos apuntar nustro cliente docker al host  docker que hemos creado:
 </p>
 
 <pre>
@@ -81,11 +82,11 @@
 
 
 <p>
-    We can access the docker machine with the command below:
+  Podemos acceder al host docker con el siguiente comando:
 </p>
 
 <pre>
-    docker-machine ssh local
+    docker-machine ssh myhost
 </pre>
 
 <p>
@@ -97,9 +98,8 @@
   docker-machine start myhost
 </pre>
 
-
 <p>
-    We can test our docker installation running the nginx container:
+    Podemos probar nuestra instalaci&oacute;n ejecutando el contenedor nginx:
 </p>
 
 <pre>
@@ -108,9 +108,9 @@
 </pre>
 
 
-<h3> Installing an image </h3>
+<h3> Instalando una imagen </h3>
 <p>
-    We can list the images installed on our docker-machine running the command below:
+    Podemos listas las imagenes instaladas en nuestro host docker ejecutando el siguiente comando:
 </p>
 
 <pre>
@@ -120,7 +120,8 @@
 </pre>
 
 <p>
-    We can download a debian image from <a href="https://hub.docker.com/">  Docker hub </a> to the docker host machine with the command below:
+    Podemos descargar una imagen debian desde <a href="https://hub.docker.com/">  Docker hub </a> e instalarla 
+    en nustro host docker con el siguiente comando:
 </p>
 
 
@@ -129,12 +130,11 @@
 </pre>
 
 
-
-
-<h2> Scala akka Simple tcp server </h2>
+<h2> Servidor tcp basado en Scala y Akka toolkit </h2>
 
 <p> 
-    Code below implements a simple tpc echo server using reactive streams:
+    El c&oacute;digo a continuaci&oacute;n implementa un servidor tcp echo usando
+reactive streams:
 </p>
 
 
@@ -229,15 +229,16 @@
 </pre>
 
 
-<p> We can use <a href="https://github.com/sbt/sbt-assembly">SBT Assembly </a> plugin to
-generate a fatjar wich will be the artifact to be deployed on our docker container </p>
+
+<p> Podemos usar el plugin <a href="https://github.com/sbt/sbt-assembly">SBT Assembly </a>  para generar el
+ fatjar que desplegaremos en el contenedor docker: </p>
 
 <pre>
     stb assembly
 </pre>
 
 <p>
-    After build the fat jar, run the project is simple:
+    Iniciar el servidor es sencillo:
 </p>
 
 <pre>
@@ -245,14 +246,12 @@ generate a fatjar wich will be the artifact to be deployed on our docker contain
 </pre>
 
 
-
-
-<h2> Building an image from a Dockerfile </h2>
+<h2> Construyendo una imagen a partir de un archivo Dockerfile </h2>
 
 
 <p>
-    We can create an image for our own instead of using an existing one, to do that, We must create
-    a file nemad Dockerfile, this file will contain the instructions required to build our image:
+    Para crear una imagen debemos crear un archivo llamado Dockerfile, este archivo contendr&aacute las
+    instrucciones requeridas para construir nuestra imagen:
 </p>
 
 
@@ -263,7 +262,7 @@ generate a fatjar wich will be the artifact to be deployed on our docker contain
 </p>
 
 <p>
-    Our Dockerfile looks like this:
+    Nuestro archivo Dockerfile:
 </p>
 
 
@@ -296,14 +295,13 @@ generate a fatjar wich will be the artifact to be deployed on our docker contain
 </pre>
 
 <p>
-    We must run <code> docker build -t simpletcp:v1  akka-image/  </code> to generate the image.
+    Debemos ejecutar <code> docker build -t simpletcp:v1  akka-image/  </code> para generar la imagen.
 </p>
 
 <p>
-   After the image creation We can crate a container by running 
+  Luego de la creaci&oacute;n de la imagen podemos crear el contenedor ejecutando
    <code>  docker run -d  -p 6000:6001  simpletcp:v1 </code>
 </p>
-
 
 
 <h2> References </h2>
@@ -332,7 +330,3 @@ generate a fatjar wich will be the artifact to be deployed on our docker contain
     </li>
 
 </ul>
-
-
-
-
